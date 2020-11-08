@@ -23,8 +23,9 @@ class Config:
 			'active':None
 		}
 		
+		self.speed_delta = 0
 		self.time_init = time.perf_counter()
-		self.max_frames = 120
+		self.max_frames = 60
 		self.frames = 0
 		self.texture_size = 64
 		self.box_size = 50
@@ -70,7 +71,9 @@ class Config:
 			2: 'Plasma',
 			3: 'Flame'
 		}
+		self.unlocked_weapons = 1
 		self.selected_weapon = 1
+		self.speed_up = False
 		self.level_up = False
 		self.level_up_hp = False
 		self.level_up_sp = False
