@@ -323,6 +323,7 @@ class Enemy(pygame.sprite.Sprite):
 		self.scale = 1
 		self.killed_time = 0
 		self.actual_time = time.perf_counter()
+		self.loot_obtained = False
 		
 		self.bullets = []
 		self.drop = {}
@@ -562,6 +563,7 @@ class Box(pygame.sprite.Sprite):
 		self.hp = self.room_level*25					# Health Points
 		self.rp = 50									# Resistance Points
 		self.killed_time = 0
+		self.loot_obtained = False
 		
 		self.drop = {}
 		# ~ self.actual_weapon = random.choice(['Gun', 'Plasma', 'Flame'])

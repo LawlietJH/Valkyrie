@@ -207,6 +207,7 @@ class Game:
 		
 		# Booleans:
 		self.extra_room_open = False
+		self.drop_on_boxes = []
 		self.damage_on_enemies = []
 		self.damage_on_boxes = []
 		self.damage_on_player = []
@@ -366,19 +367,25 @@ class Game:
 			while None in enemy.bullets: enemy.bullets.remove(None)
 		
 		for i in range(len(self.room.boxes)):
-			if self.room.boxes[i].kill and time.perf_counter() - self.room.boxes[i].killed_time > 2:
-				b = self.room.boxes.pop(i)
-				self.add_drops(b)
-				del b
-				self.room.boxes.insert(i, None)
+			if self.room.boxes[i].kill:
+				if not self.room.boxes[i].loot_obtained:
+					self.add_drops(self.room.boxes[i])
+					self.room.boxes[i].loot_obtained = True
+				if time.perf_counter() - self.room.boxes[i].killed_time > 2:
+					b = self.room.boxes.pop(i)
+					del b
+					self.room.boxes.insert(i, None)
 		while None in self.room.boxes: self.room.boxes.remove(None)
 		
 		for i in range(len(self.room.enemies)):
-			if self.room.enemies[i].kill and time.perf_counter() - self.room.enemies[i].killed_time > 2:
-				b = self.room.enemies.pop(i)
-				self.add_drops(b)
-				del b
-				self.room.enemies.insert(i, None)
+			if self.room.enemies[i].kill:
+				if not self.room.enemies[i].loot_obtained:
+					self.add_drops(self.room.enemies[i])
+					self.room.enemies[i].loot_obtained = True
+				if time.perf_counter() - self.room.enemies[i].killed_time > 2:
+					b = self.room.enemies.pop(i)
+					del b
+					self.room.enemies.insert(i, None)
 		while None in self.room.enemies: self.room.enemies.remove(None)
 		
 		self.room.col_objs  = self.room.walls + self.room.boxes + self.room.enemies
