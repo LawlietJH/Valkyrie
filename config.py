@@ -89,6 +89,7 @@ class Info:
 		drops = {
 			'money':       { 'probability': 95, 'drop': {'money': money}      },
 			'ammo':        { 'probability': 20, 'drop': {'ammo': ammo}        },
+			'dmg res':     { 'probability':  100, 'drop': {'dmg res': .01}      },
 			'tps':         { 'probability':  1, 'drop': {'tps': .01}          },
 			'range':       { 'probability':  1, 'drop': {'range': .01}        },
 			'speed':       { 'probability':  5, 'drop': {'speed': .1}         },

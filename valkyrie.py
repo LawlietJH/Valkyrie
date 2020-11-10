@@ -54,57 +54,60 @@ class Room:
 	def set_enemies(self):
 		
 		gun_init_stats = {
-			'name': 'Gun',
-			'lvl':   0,
-			'str_':  10 * ( 1 + int( self.level/5 ) ),					# Cambia cada 5 niveles.
-			# ~ 'str_':  2 * self.level,									# Cambia cada nivel.
-			'ammo':  None,
-			'cpw':   None,
-			'cpl':   None,
-			'cpa':   None,
-			'istr':  None,
-			'icost': None,
-			'tps':   2 - self.level/100 if self.level/100 <= 1.5 else 1.5,
-			'dofs':  2 + self.level/100,
-			'speed': 4,
-			'acc':   6 - int(self.level/15) if int(self.level/15) <= 6 else 6,
-			'ps':    10
+			'name':  'Gun',
+			'lvl':    0,
+			'str_':   10 * ( 1 + int( self.level/5 ) ),					# Cambia cada 5 niveles.
+			# ~ 'str_':   2 * self.level,									# Cambia cada nivel.
+			'ammo':   None,
+			'cpw':    None,
+			'cpl':    None,
+			'cpa':    None,
+			'istr':   None,
+			'icost':  None,
+			'dmg_hp': 0,
+			'tps':    2 - self.level/100 if self.level/100 <= 1.5 else 1.5,
+			'dofs':   2 + self.level/100,
+			'speed':  4,
+			'acc':    6 - int(self.level/15) if int(self.level/15) <= 6 else 6,
+			'ps':     10
 		}
 		
 		plasma_init_stats = {
-			'name': 'Plasma',
-			'lvl':   0,
-			'str_':  48 * ( 1 + int( self.level/6 ) ),					# Cambia cada 10 niveles.
-			# ~ 'str_':  8 * self.level,									# Cambia cada nivel.
-			'ammo':  None,
-			'cpw':   None,
-			'cpl':   None,
-			'cpa':   None,
-			'istr':  None,
-			'icost': None,
-			'tps':   1 - self.level/100 if self.level/100 <= .5 else .5,
-			'dofs':  2 + self.level/100,
-			'speed': 2,
-			'acc':   10 - int(self.level/10) if int(self.level/10) <= 10 else 10,
-			'ps':    20
+			'name':  'Plasma',
+			'lvl':    0,
+			'str_':   48 * ( 1 + int( self.level/6 ) ),					# Cambia cada 10 niveles.
+			# ~ 'str_':   8 * self.level,									# Cambia cada nivel.
+			'ammo':   None,
+			'cpw':    None,
+			'cpl':    None,
+			'cpa':    None,
+			'istr':   None,
+			'icost':  None,
+			'dmg_hp': .1,
+			'tps':    1 - self.level/100 if self.level/100 <= .5 else .5,
+			'dofs':   2 + self.level/100,
+			'speed':  2,
+			'acc':    10 - int(self.level/10) if int(self.level/10) <= 10 else 10,
+			'ps':     20
 		}
 		
 		flame_init_stats = {
-			'name': 'Flame',
-			'lvl':   0,
-			'str_':  112 * ( 1 + int( self.level/7 ) ),				# Cambia cada 10 niveles.
-			# ~ 'str_':  16 * self.level,									# Cambia cada nivel.
-			'ammo':  None,
-			'cpw':   None,
-			'cpl':   None,
-			'cpa':   None,
-			'istr':  None,
-			'icost': None,
-			'tps':   2 - self.level/100 if self.level/100 <= 1.5 else 1.5,
-			'dofs':  1 + self.level/60,
-			'speed': 5,
-			'acc':   3 - int(self.level/30) if int(self.level/30) <= 3 else 3,
-			'ps':    30
+			'name':  'Flame',
+			'lvl':    0,
+			'str_':   112 * ( 1 + int( self.level/7 ) ),				# Cambia cada 10 niveles.
+			# ~ 'str_':   16 * self.level,									# Cambia cada nivel.
+			'ammo':   None,
+			'cpw':    None,
+			'cpl':    None,
+			'cpa':    None,
+			'istr':   None,
+			'icost':  None,
+			'dmg_hp': .2,
+			'tps':    2 - self.level/100 if self.level/100 <= 1.5 else 1.5,
+			'dofs':   1 + self.level/60,
+			'speed':  5,
+			'acc':    3 - int(self.level/30) if int(self.level/30) <= 3 else 3,
+			'ps':     30
 		}
 		
 		self.enemy_01_init_stats = {
@@ -394,11 +397,16 @@ class Game:
 		for k, v in obj.drop.items():
 			if k == 'money':  self.data.player.money += v
 			elif k == 'ammo': self.data.player.weapons[obj.actual_weapon].ammo += v
+			elif k == 'dmg res':
+				if self.data.player.dmg_res < .9:
+					self.data.player.dmg_res += v
+				else:
+					self.data.player.weapons[obj.actual_weapon].speed += v*10
 			elif k == 'tps':
 				if self.data.player.weapons[obj.actual_weapon].tps > 0:
 					self.data.player.weapons[obj.actual_weapon].tps -= v
 				else:
-					self.data.player.weapons[obj.actual_weapon].speed += v/10
+					self.data.player.weapons[obj.actual_weapon].speed += v*10
 			elif k == 'range': self.data.player.weapons[obj.actual_weapon].dofs += v
 			elif k == 'speed': self.data.player.weapons[obj.actual_weapon].speed += v
 			elif k == 'accuracy':
@@ -808,6 +816,11 @@ class Game:
 			
 			if k == 'money':   text = '+$' + str(v)
 			elif k == 'ammo':  text = obj.actual_weapon+' Ammo +'+str(v)
+			elif k == 'dmg res':
+				if self.data.player.dmg_res < .9:
+					text = 'Player DMG Resistance +'+str(v)
+				else:
+					text = obj.actual_weapon+' Speed +'+str(v*10)
 			elif k == 'tps':
 				if self.data.player.weapons[obj.actual_weapon].tps > 0:
 					text = obj.actual_weapon+' TPS Speed -'+str(v)
@@ -819,7 +832,7 @@ class Game:
 				if self.data.player.weapons[obj.actual_weapon].accuracy > 0:
 					text = obj.actual_weapon+' Accuracy +'+str(v)
 				else:
-					text = obj.actual_weapon+' Speed +'+str(v/10)
+					text = obj.actual_weapon+' Speed +'+str(v*10)
 			elif k == 'piercing': text = obj.actual_weapon+' Piercing +'+str(v)
 			elif k == 'speed mech': text = 'Speed Mech +'+str(v)
 			elif k == 'hp recovery': text = 'HP Recovery speed -'+str(v)

@@ -82,8 +82,8 @@ class Player(pygame.sprite.Sprite):
 		self.y = self.rect[1]			# Position Y
 		
 		self.speed = speed				# Player Speed
-		self.dmg_hp = .2				# Damage to health points
-		self.resistant_dmg_hp = .2		# Resistance to damage
+		# ~ self.dmg_hp = .2				# Damage to health points
+		self.dmg_res = .5				# Resistance to damage
 		self.killed_time = 0
 		self.last_hit_time = 0
 		self.hp_time_recovery = .3
@@ -112,8 +112,8 @@ class Player(pygame.sprite.Sprite):
 		
 		self.money  = data['money']
 		self.speed  = data['speed']
-		self.dmg_hp = data['dmg_hp']
-		self.resistant_dmg_hp = data['resistant_dmg_hp']
+		# ~ self.dmg_hp = data['dmg_hp']
+		self.dmg_res = data['dmg_res']
 		self.hp_time_recovery = data['hp_time_recovery']
 		self.sp_time_recovery = data['sp_time_recovery']
 		
@@ -124,12 +124,13 @@ class Player(pygame.sprite.Sprite):
 				elif name == 'Plasma': self.update_weapons(all_weapons[2])
 				elif name == 'Flame':  self.update_weapons(all_weapons[3])
 			
-			self.weapons[name].ammo  = data['weapons'][name]['ammo']
-			self.weapons[name].tps   = data['weapons'][name]['tps']
-			self.weapons[name].dofs  = data['weapons'][name]['dofs']
-			self.weapons[name].speed = data['weapons'][name]['speed']
+			self.weapons[name].ammo     = data['weapons'][name]['ammo']
+			self.weapons[name].dmg_hp   = data['weapons'][name]['dmg_hp']
+			self.weapons[name].tps      = data['weapons'][name]['tps']
+			self.weapons[name].dofs     = data['weapons'][name]['dofs']
+			self.weapons[name].speed    = data['weapons'][name]['speed']
 			self.weapons[name].accuracy = data['weapons'][name]['acc']
-			self.weapons[name].ps    = data['weapons'][name]['ps']
+			self.weapons[name].ps       = data['weapons'][name]['ps']
 			
 			for lvl in range(data['weapons'][name]['lvl']): self.weapons[name].levelUp()
 	
@@ -235,7 +236,9 @@ class Player(pygame.sprite.Sprite):
 					if result:
 						str_ = o.gun.str
 						if not self.chp == 0:
-							self.damage_effect(str_, self.resistant_dmg_hp)
+							print(self.dmg_res, round(self.dmg_res,1))
+							tmp_dmg_hp = round(self.dmg_res,1)-enemy.gun.dmg_hp
+							self.damage_effect(str_, 1-tmp_dmg_hp)
 						o.hp -= 1000
 						self.last_hit_time = time.perf_counter()
 						tmp_info.append({
@@ -350,6 +353,7 @@ class Enemy(pygame.sprite.Sprite):
 		
 		if random.random() < drops['money']['probability']      /100: self.drop.update(drops['money']['drop'])
 		if random.random() < drops['ammo']['probability']       /100: self.drop.update(drops['ammo']['drop'])
+		if random.random() < drops['dmg res']['probability']    /100: self.drop.update(drops['dmg res']['drop'])
 		if random.random() < drops['tps']['probability']        /100: self.drop.update(drops['tps']['drop'])
 		if random.random() < drops['range']['probability']      /100: self.drop.update(drops['range']['drop'])
 		if random.random() < drops['speed']['probability']      /100: self.drop.update(drops['speed']['drop'])
@@ -387,7 +391,7 @@ class Enemy(pygame.sprite.Sprite):
 				if result:
 					str_ = o.gun.str
 					if not self.chp == 0:
-						self.damage_effect(str_, player.dmg_hp)
+						self.damage_effect(str_, player.gun.dmg_hp)
 					o.hp -= self.rp
 					return {
 						'dmg': str_,
@@ -443,7 +447,7 @@ class Enemy(pygame.sprite.Sprite):
 
 class Weapon:
 	
-	def __init__(self, bullet, name, lvl, str_, ammo, cpw, cpl, cpa, istr, icost, tps, dofs, speed, acc, ps):
+	def __init__(self, bullet, name, lvl, str_, ammo, cpw, cpl, cpa, istr, icost, dmg_hp, tps, dofs, speed, acc, ps):
 		self.bullet = bullet	# Bullet Class
 		self.name = name		# Weapon name
 		self.lvl = lvl			# Weapon level
@@ -454,6 +458,7 @@ class Weapon:
 		self.cpa = cpa			# Cost per ammunition
 		self.istr  = istr		# Increase strength per level
 		self.icost = icost		# Increase cost per level
+		self.dmg_hp = dmg_hp	# Distribution of damages
 		self.tps = tps			# Time per shot
 		self.dofs = dofs		# Duration of the shot
 		self.speed = speed		# Shot speed
@@ -587,6 +592,7 @@ class Box(pygame.sprite.Sprite):
 		
 		if random.random() < drops['money']['probability']      /100: self.drop.update(drops['money']['drop'])
 		if random.random() < drops['ammo']['probability']       /100: self.drop.update(drops['ammo']['drop'])
+		if random.random() < drops['dmg res']['probability']    /100: self.drop.update(drops['dmg res']['drop'])
 		if random.random() < drops['tps']['probability']        /100: self.drop.update(drops['tps']['drop'])
 		if random.random() < drops['range']['probability']      /100: self.drop.update(drops['range']['drop'])
 		if random.random() < drops['speed']['probability']      /100: self.drop.update(drops['speed']['drop'])
@@ -714,53 +720,56 @@ class Data:
 		
 		self.gun_init_stats = {
 			'name':  'Gun',
-			'lvl':   0,
-			'str_':  10,			#10
-			'ammo':  1000,
-			'cpw':   0,
-			'cpl':   100,
-			'cpa':   10,
-			'istr':  10,
-			'icost': 100,
-			'tps':   .5,			# .5
-			'dofs':  2,				#  2
-			'speed': 5,				#  5
-			'acc':   5,				#  5
-			'ps':    10
+			'lvl':    0,
+			'str_':   10,			# 10
+			'ammo':   1000,
+			'cpw':    0,
+			'cpl':    100,
+			'cpa':    10,
+			'istr':   10,
+			'icost':  100,
+			'dmg_hp': .2,			# .2
+			'tps':    .5,			# .5
+			'dofs':   2,			#  2
+			'speed':  5,			#  5
+			'acc':    5,			#  5
+			'ps':     10
 		}
 		
 		self.plasma_init_stats = {
-			'name': 'Plasma',
-			'lvl':   0,
-			'str_':  100,
-			'ammo':  10,
-			'cpw':   10000,
-			'cpl':   5000,
-			'cpa':   100,
-			'istr':  50,
-			'icost': 2500,
-			'tps':   1,
-			'dofs':  1,
-			'speed': 3,
-			'acc':   1,
-			'ps':    20
+			'name':  'Plasma',
+			'lvl':    0,
+			'str_':   100,
+			'ammo':   10,
+			'cpw':    10000,
+			'cpl':    5000,
+			'cpa':    100,
+			'istr':   50,
+			'icost':  2500,
+			'dmg_hp': .3,
+			'tps':    1,
+			'dofs':   1,
+			'speed':  3,
+			'acc':    1,
+			'ps':     20
 		}
 		
 		self.flame_init_stats = {
-			'name': 'Flame',
-			'lvl':   0,
-			'str_':  200,
-			'ammo':  5,
-			'cpw':   20000,
-			'cpl':   10000,
-			'cpa':   200,
-			'istr':  100,
-			'icost': 5000,
-			'tps':   2,
-			'dofs':  1,
-			'speed': 5,
-			'acc':   0,
-			'ps':    30
+			'name':  'Flame',
+			'lvl':    0,
+			'str_':   200,
+			'ammo':   5,
+			'cpw':    20000,
+			'cpl':    10000,
+			'cpa':    200,
+			'istr':   100,
+			'icost':  5000,
+			'dmg_hp': .4,
+			'tps':    2,
+			'dofs':   1,
+			'speed':  5,
+			'acc':    0,
+			'ps':     30
 		}
 		
 		self.gun    = Weapon(Bullet, **self.gun_init_stats)

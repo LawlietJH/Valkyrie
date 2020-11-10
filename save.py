@@ -8,14 +8,15 @@ def save_data(player, verb=True):
 	
 	for name, weapon in player.weapons.items():
 		data = {
-			'lvl':   weapon.lvl,			# Weapon level
-			'str_':  weapon.str,			# Weapon strenght
-			'ammo':  weapon.ammo,			# Ammunition quantity
-			'tps':   round(weapon.tps,2),	# Time per shot
-			'dofs':  round(weapon.dofs,2),	# Duration of the shot = Range
-			'speed': round(weapon.speed,2),	# Shot speed
-			'acc':   weapon.accuracy,		# Shot accuracy
-			'ps':    weapon.ps				# Piercing strike
+			'lvl':    weapon.lvl,			# Weapon level
+			'str_':   weapon.str,			# Weapon strenght
+			'ammo':   weapon.ammo,			# Ammunition quantity
+			'dmg_hp': weapon.dmg_hp,		
+			'tps':    round(weapon.tps,2),	# Time per shot
+			'dofs':   round(weapon.dofs,2),	# Duration of the shot = Range
+			'speed':  round(weapon.speed,2),	# Shot speed
+			'acc':    weapon.accuracy,		# Shot accuracy
+			'ps':     weapon.ps				# Piercing strike
 		}
 		
 		data_weapons[name] = data
@@ -28,8 +29,7 @@ def save_data(player, verb=True):
 		'money':            player.money,
 		'weapons':          data_weapons,
 		'speed':            round(player.speed,2),
-		'dmg_hp':           player.dmg_hp,
-		'resistant_dmg_hp': player.resistant_dmg_hp,
+		'dmg_res':			round(player.dmg_res,2),
 		'hp_time_recovery': round(player.hp_time_recovery,2),
 		'sp_time_recovery': round(player.sp_time_recovery,2)
 	}
