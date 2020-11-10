@@ -215,15 +215,16 @@ class Player(pygame.sprite.Sprite):
 		screen.blit(self.image, self.rect)
 		
 		if time.perf_counter() - self.last_hit_time > 10:
-			if time.perf_counter() - self.hp_recovery_time > self.hp_time_recovery:
-				if self.chp < self.hp:
-					self.chp += 1
-					self.hp_recovery_time = time.perf_counter()
+			# ~ if time.perf_counter() - self.hp_recovery_time > self.hp_time_recovery:
+				# ~ if self.chp < self.hp:
+					# ~ self.chp += 1
+					# ~ self.hp_recovery_time = time.perf_counter()
 			if time.perf_counter() - self.sp_recovery_time > self.sp_time_recovery:
 				if self.csp < self.sp:
 					self.csp += 1
 					self.sp_recovery_time = time.perf_counter()
 		
+		tmp_info = []
 		if not self.chp == 0:
 			mask = pygame.mask.from_surface(self.image)
 			for enemy in enemies:
@@ -237,7 +238,15 @@ class Player(pygame.sprite.Sprite):
 							self.damage_effect(str_, self.resistant_dmg_hp)
 						o.hp -= 1000
 						self.last_hit_time = time.perf_counter()
+						tmp_info.append({
+							'dmg': str_,
+							'x':   int(self.x),
+							'y':   int(self.y),
+							'ty':  int(self.ty),
+							'hit': time.perf_counter()
+						})
 						break
+		return tmp_info
 	
 	def damage_effect(self, str_, dmg_hp):
 		dmg_sp = 1-dmg_hp
@@ -379,7 +388,13 @@ class Enemy(pygame.sprite.Sprite):
 					if not self.chp == 0:
 						self.damage_effect(str_, player.dmg_hp)
 					o.hp -= self.rp
-					return
+					return {
+						'dmg': str_,
+						'x':   self.x,
+						'y':   self.y,
+						'ty':  self.ty,
+						'hit': time.perf_counter()
+					}
 	
 	def damage_effect(self, str_, dmg_hp):
 		dmg_sp = 1-dmg_hp
@@ -544,7 +559,7 @@ class Box(pygame.sprite.Sprite):
 		self.x = random.randint(100,dims[0]-100)
 		self.y = random.randint(100,dims[1]-100)
 		self.room_level = room_level
-		self.hp = self.room_level*10					# Health Points
+		self.hp = self.room_level*25					# Health Points
 		self.rp = 50									# Resistance Points
 		self.killed_time = 0
 		
@@ -594,13 +609,20 @@ class Box(pygame.sprite.Sprite):
 				result = m.overlap(mask, offset)
 				if result:
 					if not self.hp == 0:
-						self.hp -= o.gun.str
+						str_ = o.gun.str
+						self.hp -= str_
 						if self.hp < 0: self.hp = 0
 						if self.hp == 0:
 							self.killed_time = time.perf_counter()
 					o.hp -= self.rp
-					return
-	
+					return {
+						'dmg': str_,
+						'x':   self.x,
+						'y':   self.y,
+						'ty':  self.ty,
+						'hit': time.perf_counter()
+					}
+		
 	@property
 	def size(self): return '{}x{}'.format(self.tx, self.ty)
 	

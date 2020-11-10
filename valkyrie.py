@@ -207,6 +207,9 @@ class Game:
 		
 		# Booleans:
 		self.extra_room_open = False
+		self.damage_on_enemies = []
+		self.damage_on_boxes = []
+		self.damage_on_player = []
 	
 	def main(self):
 		
@@ -652,7 +655,12 @@ class Game:
 	
 	def draw_boxes(self):
 		for b in self.room.boxes:
-			b.update(self.screen, self.data.player, self.room.bullets, self.scale)
+			
+			obj = b.update(self.screen, self.data.player, self.room.bullets, self.scale)
+			
+			if obj: self.damage_on_boxes.append(obj)
+			self.draw_damage('boxes')
+			
 			if b.kill:
 				self.draw_drops(b)
 			else:
@@ -754,11 +762,19 @@ class Game:
 		self.draw_text(txt, [int(self.RESOLUTION[0]/2-(len(txt)*(font_size/2)/2)), int(self.RESOLUTION[1]/2 - font_size/2)], self.config.FONT[font], self.config.COLOR['Negro'])
 	
 	def draw_player(self):
-		self.data.player.update(self.screen, self.config, self.room.col_objs, self.room.enemies)
+		obj = self.data.player.update(self.screen, self.config, self.room.col_objs, self.room.enemies)
+		
+		for o in obj: self.damage_on_player.append(o)
+		self.draw_damage('player')
 	
 	def draw_enemies(self):
 		for e in self.room.enemies:
-			e.update(self.screen, self.data.player, self.room.bullets)
+			
+			obj = e.update(self.screen, self.data.player, self.room.bullets)
+			
+			if obj: self.damage_on_enemies.append(obj)
+			self.draw_damage('enemies')
+			
 			if e.kill:
 				self.draw_drops(e)
 			else:
@@ -809,6 +825,38 @@ class Game:
 			self.draw_text(text,  pos,                 self.config.FONT[font], self.config.COLOR['Negro'])
 			self.draw_text(text, (pos[0]-1, pos[1]-1), self.config.FONT[font], self.config.COLOR['Azul Claro'])
 			add += 15
+	
+	def draw_damage(self, type_):
+		
+		font_size = int(16*self.scale)
+		font = 'Inc-R '+str(font_size)
+		
+		if type_ == 'enemies': damages = self.damage_on_enemies[:]
+		elif type_ == 'boxes': damages = self.damage_on_boxes[:]
+		elif type_ == 'player': damages = self.damage_on_player[:]
+		
+		for i, obj in enumerate(damages):
+			
+			text = '-'+str(obj['dmg'])
+			
+			current_time = time.perf_counter() - obj['hit']
+			x = self.get_pos_text_center(obj['x'], len(text), font, font_size)
+			move = (current_time) * 20
+			pos = (x, int( obj['y'] + (obj['ty']/2) - move - 50))
+			
+			self.draw_text(text,  pos,                 self.config.FONT[font], self.config.COLOR['Negro'])
+			self.draw_text(text, (pos[0]-1, pos[1]-1), self.config.FONT[font], self.config.COLOR['Rojo Claro'])
+			
+			if type_ == 'enemies' and current_time > 1: self.damage_on_enemies[i] = None
+			elif type_ == 'boxes' and current_time > 1: self.damage_on_boxes[i] = None
+			elif type_ == 'player' and current_time > 1: self.damage_on_player[i] = None
+		
+		if type_ == 'enemies':
+			while None in self.damage_on_enemies: self.damage_on_enemies.remove(None)
+		elif type_ == 'boxes':
+			while None in self.damage_on_boxes: self.damage_on_boxes.remove(None)
+		elif type_ == 'player':
+			while None in self.damage_on_player: self.damage_on_player.remove(None)
 	
 	def get_pos_text_center(self, x, ltext, font, font_size):
 		if font.startswith('Retro'): pixels = 3
