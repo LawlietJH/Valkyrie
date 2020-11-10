@@ -21,6 +21,8 @@ def save_data(player, verb=True):
 		data_weapons[name] = data
 	
 	data_player = {
+		'hp':               player.hp,
+		'sp':               player.sp,
 		'hp_level':         player.hp_level,
 		'sp_level':         player.sp_level,
 		'money':            player.money,

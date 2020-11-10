@@ -198,7 +198,7 @@ class Game:
 		self.actual_time = time.perf_counter()
 		self.actual_frames = self.config.max_frames
 		self.max_room = 1
-		self.icon_weapons = []
+		self.icon_weapons = [None, None, None]
 		self.all_weapons = {
 			1: {'Gun':    self.data.gun},
 			2: {'Plasma': self.data.plasma},
@@ -224,7 +224,7 @@ class Game:
 			# ~ self.data.player.update_weapons(self.all_weapons[2])
 			# ~ self.data.player.update_weapons(self.all_weapons[3])
 		
-		self.config.unlocked_weapons = len(self.data.player.weapons)
+		# ~ self.config.unlocked_weapons = len(self.data.player.weapons)
 		
 		self.create_icons()
 		
@@ -311,11 +311,25 @@ class Game:
 			self.data.player.money = self.data.player.gun.levelUp(self.data.player.money)
 			self.config.level_up = False
 		if self.config.level_up_hp:
-			self.data.player.money = self.data.player.level_up_hp(self.data.player.money)
+			if self.data.player.money >= self.data.player.cpl_hp: self.data.player.level_up_hp()
 			self.config.level_up_hp = False
 		if self.config.level_up_sp:
-			self.data.player.money = self.data.player.level_up_sp(self.data.player.money)
+			if self.data.player.money >= self.data.player.cpl_sp: self.data.player.level_up_sp()
 			self.config.level_up_sp = False
+		if self.config.shop_2 and not 'Plasma' in self.data.player.weapons:
+			if self.data.player.money >= self.data.plasma_init_stats['cpw']:
+				self.data.player.money -= self.data.plasma_init_stats['cpw']
+				self.data.player.update_weapons(self.all_weapons[2])
+				self.icon_weapons[1] = self.data.iconWeapon(self.screen, 'Plasma')
+				self.config.unlocked_weapons[1] = 'Plasma'
+			self.config.shop_2 = False
+		if self.config.shop_3 and not 'Flame' in self.data.player.weapons:
+			if self.data.player.money >= self.data.flame_init_stats['cpw']:
+				self.data.player.money -= self.data.flame_init_stats['cpw']
+				self.data.player.update_weapons(self.all_weapons[3])
+				self.icon_weapons[2] = self.data.iconWeapon(self.screen, 'Flame')
+				self.config.unlocked_weapons[2] = 'Flame'
+			self.config.shop_3 = False
 	
 	def frames_counter(self, verb=False):
 		
@@ -419,7 +433,9 @@ class Game:
 	
 	def create_icons(self):
 		for name in self.data.player.weapons:
-			self.icon_weapons.append(self.data.iconWeapon(self.screen, name))
+			if   name == 'Gun':    self.icon_weapons[0] = self.data.iconWeapon(self.screen, name)
+			elif name == 'Plasma': self.icon_weapons[1] = self.data.iconWeapon(self.screen, name)
+			elif name == 'Flame':  self.icon_weapons[2] = self.data.iconWeapon(self.screen, name)
 	
 	def create_bullets(self):
 		if self.config.mbd['active'] and self.config.mbd['button'] == 1 and self.data.player.gun.ammo > 0:
@@ -590,6 +606,11 @@ class Game:
 			pos_y = int((y-1)*self.scale)
 			tam_x = int((tam+2)*self.scale)
 			tam_y = int((tam+2)*self.scale)
+			
+			if not iw:
+				self.rect_opaco([pos_x, pos_y, tam_x+int(8*self.scale), tam_y+int(16*self.scale)], self.config.COLOR['Negro'], 120)
+				y += tam+int(20*self.scale)
+				continue
 			
 			if iw.name == self.data.player.actual_weapon:
 				self.rect_opaco([pos_x, pos_y, tam_x+int(10*self.scale), tam_y+int(16*self.scale)], self.config.COLOR['Negro'], 255)

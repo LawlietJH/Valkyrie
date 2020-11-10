@@ -71,12 +71,14 @@ class Config:
 			2: 'Plasma',
 			3: 'Flame'
 		}
-		self.unlocked_weapons = 1
+		self.unlocked_weapons = [ 'Gun', None, None ]
 		self.selected_weapon = 1
 		self.speed_up = False
 		self.level_up = False
 		self.level_up_hp = False
 		self.level_up_sp = False
+		self.shop_2 = False
+		self.shop_3 = False
 
 
 

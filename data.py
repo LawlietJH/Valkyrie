@@ -80,6 +80,7 @@ class Player(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect(center=(150, 150))
 		self.x = self.rect[0]			# Position X
 		self.y = self.rect[1]			# Position Y
+		
 		self.speed = speed				# Player Speed
 		self.dmg_hp = .2				# Damage to health points
 		self.resistant_dmg_hp = .2		# Resistance to damage
@@ -91,7 +92,6 @@ class Player(pygame.sprite.Sprite):
 		self.sp_recovery_time = time.perf_counter()
 		self.last_mouse_pos = None
 		
-		# ~ self.dim = 20
 		self.angle = 0
 		self.colision = False
 		self.dirs = ''
@@ -107,19 +107,8 @@ class Player(pygame.sprite.Sprite):
 	
 	def load_player(self, data, all_weapons):
 		
-		for lvl in range(data['hp_level']):
-			self.cpl_hp += self.icpl_hp
-			self.hp_level += 1
-			aument = (self.hppl*self.hp_level)
-			self.hp = self.hp_init + aument
-			self.chp += self.hppl
-		
-		for lvl in range(data['sp_level']):
-			self.cpl_sp += self.icpl_sp
-			self.sp_level += 1
-			aument = (self.sppl*self.sp_level)
-			self.sp = self.sp_init + aument
-			self.csp += self.sppl
+		for lvl in range(data['hp_level']): self.level_up_hp(False)
+		for lvl in range(data['sp_level']): self.level_up_sp(False)
 		
 		self.money  = data['money']
 		self.speed  = data['speed']
@@ -129,39 +118,40 @@ class Player(pygame.sprite.Sprite):
 		self.sp_time_recovery = data['sp_time_recovery']
 		
 		for name, weapon in data['weapons'].items():
+			
 			if not name in self.weapons:
 				if   name == 'Gun':    self.update_weapons(all_weapons[1])
 				elif name == 'Plasma': self.update_weapons(all_weapons[2])
 				elif name == 'Flame':  self.update_weapons(all_weapons[3])
-			self.weapons[name].lvl   = data['weapons'][name]['lvl']
-			self.weapons[name].str   = data['weapons'][name]['str_']
+			
 			self.weapons[name].ammo  = data['weapons'][name]['ammo']
 			self.weapons[name].tps   = data['weapons'][name]['tps']
 			self.weapons[name].dofs  = data['weapons'][name]['dofs']
 			self.weapons[name].speed = data['weapons'][name]['speed']
 			self.weapons[name].accuracy = data['weapons'][name]['acc']
 			self.weapons[name].ps    = data['weapons'][name]['ps']
-	
-	def level_up_hp(self, money=None):
-		if money >= self.cpl_hp:
-			money -= self.cpl_hp
-			self.cpl_hp += self.icpl_hp
-			self.hp_level += 1
-			aument = (self.hppl*self.hp_level)
-			self.hp = self.hp_init + aument
-			self.chp += self.hppl
-		return money
-	
-	def level_up_sp(self, money=None):
-		if money >= self.cpl_sp:
-			money -= self.cpl_sp
-			self.cpl_sp += self.icpl_sp
-			self.sp_level += 1
-			aument = (self.sppl*self.sp_level)
-			self.sp = self.sp_init + aument
-			self.csp += self.sppl
-		return money
 			
+			for lvl in range(data['weapons'][name]['lvl']): self.weapons[name].levelUp()
+	
+	def level_up_hp(self, money=True):
+		
+		if money: self.money -= self.cpl_hp
+		
+		self.cpl_hp += self.icpl_hp
+		self.hp_level += 1
+		aument = (self.hppl*self.hp_level)
+		self.hp = self.hp_init + aument
+		self.chp += self.hppl
+	
+	def level_up_sp(self, money=True):
+		
+		if money: self.money -= self.cpl_sp
+		
+		self.cpl_sp += self.icpl_sp
+		self.sp_level += 1
+		aument = (self.sppl*self.sp_level)
+		self.sp = self.sp_init + aument
+		self.csp += self.sppl
 	
 	@property
 	def gun(self): return self.weapons[self.actual_weapon]
@@ -457,19 +447,27 @@ class Weapon:
 	def update_speed(self, scale):
 		self.speed = self.speed*scale
 	
-	def levelUp(self, money):
-		
-		if money >= self.cpl:
-			
-			money -= self.cpl
+	def levelUp(self, money=None):
+		if money:
+			if money >= self.cpl:
+				money -= self.cpl
+				self.lvl += 1
+				self.str += self.istr
+				self.cpl += self.icost
+			return money
+		else:
 			self.lvl += 1
 			self.str += self.istr
 			self.cpl += self.icost
-		
-		return money
 	
 	def addAmmo(self, qty):
-		self.ammo += qty
+		
+		if money >= self.cpl:
+			
+			money -= self.cpa
+			self.ammo += qty
+		
+		return money
 	
 	def __str__(self):
 		stats  = '\n  {}:{}'.format(self.name, 'Next'.rjust(20) )
