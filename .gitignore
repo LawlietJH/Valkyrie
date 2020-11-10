@@ -4,6 +4,7 @@ img/battlemech/original/*.*
 img/weapons/original/*.*
 img/*.*
 Pixel Arts/*.*
+*.dat
 
 #==================
 __pycache__/
