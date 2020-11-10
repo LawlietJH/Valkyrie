@@ -5,6 +5,7 @@ import events
 import config
 import data
 import time
+import save
 import os
 
 
@@ -22,15 +23,17 @@ class Room:
 		self.boxes = []
 		self.col_objs = []
 		
-		self.room_L = (self.room[0]-1, self.room[1]) if self.room[0] > 0 else None
-		self.room_R = (self.room[0]+1, self.room[1]) if self.room[0] < limit else None
+		self.room_D = (self.room[0], self.room[1]+1) if self.room[1] <= limit-1 else None
+		self.room_R = (self.room[0]+1, self.room[1]) if self.room[0] <= limit-1 else None
 		self.room_U = (self.room[0], self.room[1]-1) if self.room[1] > 0 else None
-		self.room_D = (self.room[0], self.room[1]+1) if self.room[1] < limit else None
+		self.room_L = (self.room[0]-1, self.room[1]) if self.room[0] > 0 else None
 		
-		self.wall_L = True if self.room[0] == 0     else False
-		self.wall_R = True if self.room[0] == limit else False
+		self.wall_D = True if self.room[1] == limit-1 else False
+		self.wall_R = True if self.room[0] == limit-1 else False
 		self.wall_U = True if self.room[1] == 0     else False
-		self.wall_D = True if self.room[1] == limit else False
+		self.wall_L = True if self.room[0] == 0     else False
+		
+		self.walls_DRUL = [self.wall_L,self.wall_R,self.wall_U,self.wall_D]
 		
 		self.ro  = ro					# Room Orogin (Number)
 		self.rod = rod					# Room Origin Direction: 'L', 'R', 'U', 'D'
@@ -42,12 +45,8 @@ class Room:
 		self.enemies_pos = [ random.choice(self.choice()) for _ in range(qty_enemies) ]
 		self.qty_boxes = random.randint(1,3)
 		
-		self.doors = set(random.choice(['L','R','U','D']) for _ in range(4))
-		if 'L' in self.doors and self.wall_L: self.doors.remove('L')
-		if 'R' in self.doors and self.wall_R: self.doors.remove('R')
-		if 'U' in self.doors and self.wall_U: self.doors.remove('U')
-		if 'D' in self.doors and self.wall_D: self.doors.remove('D')
-		print(self.doors)
+		self.opens = set()
+		self.doors = ''
 		
 		self.set_enemies()
 		
@@ -57,59 +56,62 @@ class Room:
 		gun_init_stats = {
 			'name': 'Gun',
 			'lvl':   0,
-			'str_':  10 * int(self.level/6+1),
+			'str_':  10 * ( 1 + int( self.level/5 ) ),					# Cambia cada 5 niveles.
+			# ~ 'str_':  2 * self.level,									# Cambia cada nivel.
 			'ammo':  None,
 			'cpw':   None,
 			'cpl':   None,
 			'cpa':   None,
 			'istr':  None,
 			'icost': None,
-			'tps':   2 - self.level/120 if self.level/120 <= 2 else 2,
-			'dofs':  1 + self.level/60,
+			'tps':   2 - self.level/100 if self.level/100 <= 1.5 else 1.5,
+			'dofs':  2 + self.level/100,
 			'speed': 4,
-			'acc':   4 - int(self.level/60) if int(self.level/60) <= 4 else 4,
+			'acc':   6 - int(self.level/15) if int(self.level/15) <= 6 else 6,
 			'ps':    10
 		}
 		
 		plasma_init_stats = {
 			'name': 'Plasma',
 			'lvl':   0,
-			'str_':  100 * int(self.level/100+1),
+			'str_':  48 * ( 1 + int( self.level/6 ) ),					# Cambia cada 10 niveles.
+			# ~ 'str_':  8 * self.level,									# Cambia cada nivel.
 			'ammo':  None,
 			'cpw':   None,
 			'cpl':   None,
 			'cpa':   None,
 			'istr':  None,
 			'icost': None,
-			'tps':   1 - self.level/240 if self.level/240 <= 1 else 1,
-			'dofs':  2 + self.level/60,
+			'tps':   1 - self.level/100 if self.level/100 <= .5 else .5,
+			'dofs':  2 + self.level/100,
 			'speed': 2,
-			'acc':   1 - int(self.level/100) if int(self.level/100) <= 1 else 1,
+			'acc':   10 - int(self.level/10) if int(self.level/10) <= 10 else 10,
 			'ps':    20
 		}
 		
 		flame_init_stats = {
 			'name': 'Flame',
 			'lvl':   0,
-			'str_':  200 * int(self.level/100+1),
+			'str_':  112 * ( 1 + int( self.level/7 ) ),				# Cambia cada 10 niveles.
+			# ~ 'str_':  16 * self.level,									# Cambia cada nivel.
 			'ammo':  None,
 			'cpw':   None,
 			'cpl':   None,
 			'cpa':   None,
 			'istr':  None,
 			'icost': None,
-			'tps':   2 - self.level/120 if self.level/120 <= 2 else 2,
+			'tps':   2 - self.level/100 if self.level/100 <= 1.5 else 1.5,
 			'dofs':  1 + self.level/60,
 			'speed': 5,
-			'acc':   0,
+			'acc':   3 - int(self.level/30) if int(self.level/30) <= 3 else 3,
 			'ps':    30
 		}
 		
 		self.enemy_01_init_stats = {
 			'path':    'Mech 01',
 			'name':    'Enemy 01',
-			'hp':      50  * int(self.level/10+1),
-			'sp':      100 * int(self.level/8+1),
+			'hp':      125 * ( 1 + int( self.level/5 ) ),
+			'sp':      100 * ( 1 + int( self.level/2 ) ),
 			'room_level': self.level,
 			'weapon':  'Gun',
 			'weapons': {'Gun': data.Weapon(data.Bullet, **gun_init_stats)}
@@ -118,8 +120,8 @@ class Room:
 		self.enemy_02_init_stats = {
 			'path':    'Mech 02',
 			'name':    'Enemy 02',
-			'hp':      250  * int(self.level/10+1),
-			'sp':      500 * int(self.level/8+1),
+			'hp':      250 * ( 1 + int( self.level/5 ) ),
+			'sp':      200 * ( 1 + int( self.level/2 ) ),
 			'room_level': self.level,
 			'weapon':  'Plasma',
 			'weapons': {'Plasma': data.Weapon(data.Bullet, **plasma_init_stats)}
@@ -128,8 +130,8 @@ class Room:
 		self.enemy_03_init_stats = {
 			'path':    'Mech 03',
 			'name':    'Enemy 03',
-			'hp':      500  * int(self.level/10+1),
-			'sp':      1000 * int(self.level/8+1),
+			'hp':      500 * ( 1 + int( self.level/5 ) ),
+			'sp':      400 * ( 1 + int( self.level/2 ) ),
 			'room_level': self.level,
 			'weapon':  'Flame',
 			'weapons': {'Flame': data.Weapon(data.Bullet, **flame_init_stats)}
@@ -174,25 +176,27 @@ class Room:
 class Game:
 	
 	def __init__(self):
+		
+		# Config:
 		self.scale = 1
 		self.RESOLUTION = (int(1280*self.scale),  int(768*self.scale))
-		self.screen = pygame.display.set_mode(self.RESOLUTION)#, pygame.FULLSCREEN)#, pygame.NOFRAME)
+		self.screen = pygame.display.set_mode(self.RESOLUTION, pygame.DOUBLEBUF)#, pygame.FULLSCREEN)#, pygame.NOFRAME)
 		
+		# Objects:
 		self.events = events.EventHandler()
 		self.config = config.Config()
 		self.data   = data.Data()
 		
+		# Pygame:
 		self.music = pygame.mixer.music
 		self.clock = pygame.time.Clock()
 		
-		self.rooms_limit = 25			# 15^2=225, 20^2=400, 25^2=625, 35^2 = 1225
-		self.rooms = {
-			(int(self.rooms_limit/2),int(self.rooms_limit/2)):
-				Room((int(self.rooms_limit/2),int(self.rooms_limit/2)), self.RESOLUTION, 1, limit=self.rooms_limit)
-		}
+		# General variables:
+		self.rooms_limit = 25			# 15=16^2=225, 20=21^2=400, 25=26^2=625, 35=36^2=1225
+		self.rooms = {(int(self.rooms_limit/2),int(self.rooms_limit/2)): Room((int(self.rooms_limit/2),int(self.rooms_limit/2)), self.RESOLUTION, 1, limit=self.rooms_limit)}
 		self.room = self.rooms[(int(self.rooms_limit/2),int(self.rooms_limit/2))]
-		
 		self.actual_time = time.perf_counter()
+		self.actual_frames = self.config.max_frames
 		self.max_room = 1
 		self.icon_weapons = []
 		self.all_weapons = {
@@ -200,6 +204,9 @@ class Game:
 			2: {'Plasma': self.data.plasma},
 			3: {'Flame':  self.data.flame}
 		}
+		
+		# Booleans:
+		self.extra_room_open = False
 	
 	def main(self):
 		
@@ -207,11 +214,20 @@ class Game:
 			for k, w in v.items():
 				w.update_speed(self.scale)
 		
-		self.data.player.update_weapons(self.all_weapons[1])
-		self.data.player.update_weapons(self.all_weapons[2])
-		self.data.player.update_weapons(self.all_weapons[3])
 		self.data.player.update_speed(self.scale)
+		self.data.player.update_weapons(self.all_weapons[1])
+		
+		data_loaded = save.load_data()
+		if data_loaded:
+			self.data.player.load_player(data_loaded, self.all_weapons)
+		# ~ else:
+			# ~ self.data.player.update_weapons(self.all_weapons[2])
+			# ~ self.data.player.update_weapons(self.all_weapons[3])
+		
+		self.config.unlocked_weapons = len(self.data.player.weapons)
+		
 		self.create_icons()
+		
 		self.data.player.update_pos(150, 150)
 		
 		while not self.config.pause:
@@ -284,9 +300,11 @@ class Game:
 			self.draw_bullets()
 			self.del_objs()
 			self.draw_stats()
-			pygame.display.flip()						# Actualiza Los Datos En La Interfaz.
 			self.frames_counter()
-			self.clock.tick(self.config.max_frames)
+			pygame.display.update()						# Actualiza Los Datos En La Interfaz. update() o flip()
+			self.config.speed_delta = self.clock.tick(self.config.max_frames) / 10
+		
+		save.save_data(self.data.player)
 	
 	def key_events(self):
 		if self.config.level_up:
@@ -300,8 +318,16 @@ class Game:
 			self.config.level_up_sp = False
 	
 	def frames_counter(self, verb=False):
+		
+		font_size = int(16*self.scale)
+		font = 'Inc-R '+str(font_size)
+		pos_x = self.RESOLUTION[0] - 75*self.scale
+		self.draw_text('FPS: '+str(self.actual_frames), (int(pos_x),   int(10*self.scale)),   self.config.FONT[font], self.config.COLOR['Negro'])
+		self.draw_text('FPS: '+str(self.actual_frames), (int(pos_x)-1, int(10*self.scale)-1), self.config.FONT[font], self.config.COLOR['Azul Claro'])
+		
 		if time.perf_counter() - self.config.time_init >= 1:
 			if verb: print('\r Frames:', self.config.frames, end='')
+			self.actual_frames = self.config.frames
 			self.config.frames = 0
 			self.config.time_init = time.perf_counter()
 	
@@ -437,10 +463,14 @@ class Game:
 			self.room.boxes.append(self.data.box('box 01', (self.RESOLUTION[0], self.RESOLUTION[1]), self.room.level, self.data.player.weapons.keys()))
 	
 	def create_background_objs(self):
+		
 		self.select_background_colors()
+		
 		base = int(self.config.texture_size*self.scale)
 		rx = int(self.RESOLUTION[0]/base)
 		ry = int(self.RESOLUTION[1]/base)
+		self.room.walls = []
+		
 		for y in range(ry):
 			obj = []
 			for x in range(rx):
@@ -464,59 +494,38 @@ class Game:
 					
 				obj.append(self.data.texture(self.screen, type_))
 			self.room.objs.append(obj)
-		self.room.walls = []
+		
 		for w in self.room.objs:
 			for wall in w:
 				if wall.name in ['wall 01','door 01']:
 					self.room.walls.append(wall)
 		
+		self.chk_opened_doors()
+	
+	def chk_opened_doors(self):
+		
 		pos_x, pos_y = self.room.room
+		candidats = []
 		
-		opens = []
+		if self.rooms.get((pos_x,   pos_y+1)): self.room.opens.add('D')
+		if self.rooms.get((pos_x+1, pos_y)):   self.room.opens.add('R')
+		if self.rooms.get((pos_x,   pos_y-1)): self.room.opens.add('U')
+		if self.rooms.get((pos_x-1, pos_y)):   self.room.opens.add('L')
 		
-		if self.rooms.get((pos_x-1, pos_y)):
-			x, y = 0, 5
-			if 'door 01' in [self.room.objs[y][x].name, self.room.objs[y+1][x].name]:
-				self.room.walls.remove(self.room.objs[y][x])
-				self.room.walls.remove(self.room.objs[y+1][x])
-				self.room.objs[y][x]   = self.data.texture(self.screen, 'floor 02')
-				self.room.objs[y+1][x] = self.data.texture(self.screen, 'floor 02')
-				# ~ print('L', self.room.doors)
-				# ~ if 'L' in self.room.doors: self.room.doors.remove('L')
-				opens.append('L')
-				self.room.doors.add('L')
+		if not 'D' in self.room.opens and not self.room.wall_D: candidats.append('D')
+		if not 'R' in self.room.opens and not self.room.wall_R: candidats.append('R')
+		if not 'U' in self.room.opens and not self.room.wall_U: candidats.append('U')
+		if not 'L' in self.room.opens and not self.room.wall_L: candidats.append('L')
 		
-		if self.rooms.get((pos_x+1, pos_y)):
-			x, y = 19, 5
-			if 'door 01' in [self.room.objs[y][x].name, self.room.objs[y+1][x].name]:
-				self.room.walls.remove(self.room.objs[y][x])
-				self.room.walls.remove(self.room.objs[y+1][x])
-				self.room.objs[y][x]   = self.data.texture(self.screen, 'floor 02')
-				self.room.objs[y+1][x] = self.data.texture(self.screen, 'floor 02')
-				opens.append('R')
-				self.room.doors.add('R')
-		
-		if self.rooms.get((pos_x, pos_y-1)):
-			x, y = 9, 0
-			if 'door 01' in [self.room.objs[y][x].name, self.room.objs[y][x+1].name]:
-				self.room.walls.remove(self.room.objs[y][x])
-				self.room.walls.remove(self.room.objs[y][x+1])
-				self.room.objs[y][x]   = self.data.texture(self.screen, 'floor 02')
-				self.room.objs[y][x+1] = self.data.texture(self.screen, 'floor 02')
-				opens.append('U')
-				self.room.doors.add('U')
-		
-		if self.rooms.get((pos_x, pos_y+1)):
-			x, y = 9, 11
-			if 'door 01' in [self.room.objs[y][x].name, self.room.objs[y][x+1].name]:
-				self.room.walls.remove(self.room.objs[y][x])
-				self.room.walls.remove(self.room.objs[y][x+1])
-				self.room.objs[y][x]   = self.data.texture(self.screen, 'floor 02')
-				self.room.objs[y][x+1] = self.data.texture(self.screen, 'floor 02')
-				opens.append('D')
-				self.room.doors.add('D')
-		
-		self.chk_doors_opened(opens)
+		if candidats:
+			r = random.randint(0, len(candidats)-1)
+			c = candidats.pop(r)
+			self.room.doors = c
+			# ~ print(self.room.doors)
+		else:
+			# ~ print(2)
+			self.extra_room_open = True
+			self.room.doors = None
 	
 	def select_background_colors(self):
 		base = int(self.config.texture_size*self.scale)
@@ -616,9 +625,9 @@ class Game:
 			effect = ['Plasma', 'Flame']
 			if b.scale > .1 and b.name in effect and t > .5:		# Efecto desvanecer.
 				b.scale -= .02
-			b.update()
+			b.update(self.config)
 		for enemy in self.room.enemies:
-			for b in enemy.bullets: b.update()
+			for b in enemy.bullets: b.update(self.config)
 	
 	def draw_boxes(self):
 		for b in self.room.boxes:
@@ -643,22 +652,59 @@ class Game:
 		ry = int(self.RESOLUTION[1]//base)
 		pos_x, pos_y = self.room.room
 		
+		if self.extra_room_open and self.room.doors:
+			# ~ print(1)
+			self.extra_room_open = False
+			self.chk_opened_doors()
+		
+		if self.rooms.get((pos_x, pos_y+1)):
+			x, y = 9, 11
+			if 'door 01' in [self.room.objs[y][x].name, self.room.objs[y][x+1].name]:
+				self.room.walls.remove(self.room.objs[y][x])
+				self.room.walls.remove(self.room.objs[y][x+1])
+				self.room.objs[y][x]   = self.data.texture(self.screen, 'floor 02')
+				self.room.objs[y][x+1] = self.data.texture(self.screen, 'floor 02')
+		
+		if self.rooms.get((pos_x+1, pos_y)):
+			x, y = 19, 5
+			if 'door 01' in [self.room.objs[y][x].name, self.room.objs[y+1][x].name]:
+				self.room.walls.remove(self.room.objs[y][x])
+				self.room.walls.remove(self.room.objs[y+1][x])
+				self.room.objs[y][x]   = self.data.texture(self.screen, 'floor 02')
+				self.room.objs[y+1][x] = self.data.texture(self.screen, 'floor 02')
+		
+		if self.rooms.get((pos_x, pos_y-1)):
+			x, y = 9, 0
+			if 'door 01' in [self.room.objs[y][x].name, self.room.objs[y][x+1].name]:
+				self.room.walls.remove(self.room.objs[y][x])
+				self.room.walls.remove(self.room.objs[y][x+1])
+				self.room.objs[y][x]   = self.data.texture(self.screen, 'floor 02')
+				self.room.objs[y][x+1] = self.data.texture(self.screen, 'floor 02')
+		
+		if self.rooms.get((pos_x-1, pos_y)):
+			x, y = 0, 5
+			if 'door 01' in [self.room.objs[y][x].name, self.room.objs[y+1][x].name]:
+				self.room.walls.remove(self.room.objs[y][x])
+				self.room.walls.remove(self.room.objs[y+1][x])
+				self.room.objs[y][x]   = self.data.texture(self.screen, 'floor 02')
+				self.room.objs[y+1][x] = self.data.texture(self.screen, 'floor 02')
+		
 		for y in range(ry):
 			for x in range(rx):
 				pygame.draw.rect(self.screen, self.room.colors[y][x], (base*x,base*y,base,base))
 				if not self.room.enemies:
 					if self.room.objs[y][x].name == 'door 01':
-						if ((x in    [0] and y in [5,6]) and self.rooms.get((pos_x-1, pos_y  )))\
-						or ((x in   [19] and y in [5,6]) and self.rooms.get((pos_x+1, pos_y  )))\
-						or ((x in [9,10] and y in   [0]) and self.rooms.get((pos_x,   pos_y-1)))\
-						or ((x in [9,10] and y in  [11]) and self.rooms.get((pos_x,   pos_y+1))):
-							self.room.walls.remove(self.room.objs[y][x])
-							self.room.objs[y][x] = self.data.texture(self.screen, 'floor 02')
+						# ~ if ((x in    [0] and y in [5,6]) and self.rooms.get((pos_x-1, pos_y  )))\
+						# ~ or ((x in   [19] and y in [5,6]) and self.rooms.get((pos_x+1, pos_y  )))\
+						# ~ or ((x in [9,10] and y in   [0]) and self.rooms.get((pos_x,   pos_y-1)))\
+						# ~ or ((x in [9,10] and y in  [11]) and self.rooms.get((pos_x,   pos_y+1))):
+							# ~ self.room.walls.remove(self.room.objs[y][x])
+							# ~ self.room.objs[y][x] = self.data.texture(self.screen, 'floor 02')
 						
-						if (x in    [0] and y in [5,6] and 'L' in self.room.doors)\
+						if (x in [9,10] and y in  [11] and 'D' in self.room.doors)\
 						or (x in   [19] and y in [5,6] and 'R' in self.room.doors)\
 						or (x in [9,10] and y in   [0] and 'U' in self.room.doors)\
-						or (x in [9,10] and y in  [11] and 'D' in self.room.doors):
+						or (x in    [0] and y in [5,6] and 'L' in self.room.doors):
 							self.room.walls.remove(self.room.objs[y][x])
 							self.room.objs[y][x] = self.data.texture(self.screen, 'floor 02')
 				# ~ self.room.objs[y][x].screen = self.screen
@@ -743,42 +789,6 @@ class Game:
 			self.draw_text(text, (pos[0]-1, pos[1]-1), self.config.FONT[font], self.config.COLOR['Azul Claro'])
 			add += 15
 	
-	def chk_doors_opened(self, opens):
-			# ~ print('xD', self.room.doors)
-		# ~ for o in opens:
-			# ~ if o in self.room.doors: self.room.doors.remove(o)
-		
-		# ~ for o in opens[:]:
-			# ~ if 'L' == o and self.room.wall_L: opens.remove(o)
-			# ~ if 'R' == o and self.room.wall_R: opens.remove(o)
-			# ~ if 'U' == o and self.room.wall_U: opens.remove(o)
-			# ~ if 'D' == o and self.room.wall_D: opens.remove(o)
-		
-		# ~ if not self.room.doors and not len(opens) == 4:
-			
-			candidats = []
-			
-			if   not 'L' in opens and not self.room.wall_L: candidats.append('L')
-			elif not 'R' in opens and not self.room.wall_R: candidats.append('R')
-			elif not 'U' in opens and not self.room.wall_U: candidats.append('U')
-			elif not 'D' in opens and not self.room.wall_D: candidats.append('D')
-			
-			if candidats:
-				print('Init', self.room.doors, '- candidatos:', candidats)
-				r = random.randint(0, len(candidats)-1)
-				c = candidats.pop(r)
-				self.room.doors.add(c)
-				
-				lens = len(candidats)-1
-				for _ in range(len(candidats)):
-					if random.random() < (4-len(opens))*.25:
-						r = random.randint(0, lens)
-						c = candidats.pop(r)
-						self.room.doors.add(c)
-						lens-=1
-				
-				print(True, self.room.doors)
-
 	def get_pos_text_center(self, x, ltext, font, font_size):
 		if font.startswith('Retro'): pixels = 3
 		if font.startswith('Inc-R'): pixels = 4

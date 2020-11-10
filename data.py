@@ -46,8 +46,9 @@ box_paths = {
 class Player(pygame.sprite.Sprite):
 	
 	def __init__(self, path, name, hp, sp, cpl_hp, cpl_sp, icpl_hp, icpl_sp, speed, money, weapons):
+		
 		super().__init__()
-		# ~ pygame.sprite.Sprite.__init__(self)
+		
 		self.path = path
 		self.image_orig = load_image(battlemech_paths[self.path])
 		self.image = self.image_orig
@@ -55,33 +56,33 @@ class Player(pygame.sprite.Sprite):
 		self.ty = self.image.get_height()
 		self.txo = self.tx
 		self.tyo = self.ty
-		self.name = name			# Player name
+		self.name = name				# Player name
 		
 		self.hp_init = hp
-		self.hp = hp				# Health points
-		self.chp = hp				# Current health points
-		self.hp_level = 0			# Health points level
-		self.hppl = 80				# Health points per level
-		self.cpl_hp = cpl_hp		# Cost per level HP
-		self.icpl_hp = icpl_hp		# Increase Cost per level HP
+		self.hp = hp					# Health points
+		self.chp = hp					# Current health points
+		self.hp_level = 0				# Health points level
+		self.hppl = 80					# Health points per level
+		self.cpl_hp = cpl_hp			# Cost per level HP
+		self.icpl_hp = icpl_hp			# Increase Cost per level HP
 		
 		self.sp_init = sp
-		self.sp = sp				# Shield points
-		self.csp = sp				# Current shield points
-		self.sp_level = 0			# Shield points level
-		self.sppl = 100				# Shield points per level
-		self.cpl_sp = cpl_sp		# Cost per level SP
-		self.icpl_sp = icpl_sp		# Increase Cost per level SP
+		self.sp = sp					# Shield points
+		self.csp = sp					# Current shield points
+		self.sp_level = 0				# Shield points level
+		self.sppl = 100					# Shield points per level
+		self.cpl_sp = cpl_sp			# Cost per level SP
+		self.icpl_sp = icpl_sp			# Increase Cost per level SP
 		
-		self.money = money			# Player money
-		self.weapons = weapons		# Player weapons
-		self.actual_weapon = 'Gun'	# Actual weapon
+		self.money = money				# Player money
+		self.weapons = weapons			# Player weapons
+		self.actual_weapon = 'Gun'		# Actual weapon
 		self.rect = self.image.get_rect(center=(150, 150))
-		self.x = self.rect[0]		# Position X
-		self.y = self.rect[1]		# Position Y
+		self.x = self.rect[0]			# Position X
+		self.y = self.rect[1]			# Position Y
 		self.speed = speed				# Player Speed
-		self.dmg_hp = .2			# Damage to health points
-		self.resistant_dmg_hp = .2	# Resistance to damage
+		self.dmg_hp = .2				# Damage to health points
+		self.resistant_dmg_hp = .2		# Resistance to damage
 		self.killed_time = 0
 		self.last_hit_time = 0
 		self.hp_time_recovery = .3
@@ -104,7 +105,44 @@ class Player(pygame.sprite.Sprite):
 		self.x = int(x*self.scale)
 		self.y = int(y*self.scale)
 	
-	def level_up_hp(self, money):
+	def load_player(self, data, all_weapons):
+		
+		for lvl in range(data['hp_level']):
+			self.cpl_hp += self.icpl_hp
+			self.hp_level += 1
+			aument = (self.hppl*self.hp_level)
+			self.hp = self.hp_init + aument
+			self.chp += self.hppl
+		
+		for lvl in range(data['sp_level']):
+			self.cpl_sp += self.icpl_sp
+			self.sp_level += 1
+			aument = (self.sppl*self.sp_level)
+			self.sp = self.sp_init + aument
+			self.csp += self.sppl
+		
+		self.money  = data['money']
+		self.speed  = data['speed']
+		self.dmg_hp = data['dmg_hp']
+		self.resistant_dmg_hp = data['resistant_dmg_hp']
+		self.hp_time_recovery = data['hp_time_recovery']
+		self.sp_time_recovery = data['sp_time_recovery']
+		
+		for name, weapon in data['weapons'].items():
+			if not name in self.weapons:
+				if   name == 'Gun':    self.update_weapons(all_weapons[1])
+				elif name == 'Plasma': self.update_weapons(all_weapons[2])
+				elif name == 'Flame':  self.update_weapons(all_weapons[3])
+			self.weapons[name].lvl   = data['weapons'][name]['lvl']
+			self.weapons[name].str   = data['weapons'][name]['str_']
+			self.weapons[name].ammo  = data['weapons'][name]['ammo']
+			self.weapons[name].tps   = data['weapons'][name]['tps']
+			self.weapons[name].dofs  = data['weapons'][name]['dofs']
+			self.weapons[name].speed = data['weapons'][name]['speed']
+			self.weapons[name].accuracy = data['weapons'][name]['acc']
+			self.weapons[name].ps    = data['weapons'][name]['ps']
+	
+	def level_up_hp(self, money=None):
 		if money >= self.cpl_hp:
 			money -= self.cpl_hp
 			self.cpl_hp += self.icpl_hp
@@ -114,7 +152,7 @@ class Player(pygame.sprite.Sprite):
 			self.chp += self.hppl
 		return money
 	
-	def level_up_sp(self, money):
+	def level_up_sp(self, money=None):
 		if money >= self.cpl_sp:
 			money -= self.cpl_sp
 			self.cpl_sp += self.icpl_sp
@@ -123,13 +161,64 @@ class Player(pygame.sprite.Sprite):
 			self.sp = self.sp_init + aument
 			self.csp += self.sppl
 		return money
+			
 	
 	@property
 	def gun(self): return self.weapons[self.actual_weapon]
 	
+	def rotate(self, mouse_pos):
+		run, rise = (mouse_pos[0]-self.x, mouse_pos[1]-self.y)
+		self.angle = math.degrees(math.atan2(rise, run))
+		self.image = pygame.transform.rotate(self.image_orig, -self.angle)
+		self.tx = self.image.get_width()
+		self.ty = self.image.get_height()
+		self.txo = self.tx
+		self.tyo = self.ty
+	
+	def move(self, config, objs, enemies):
+		
+		# ~ print(self.speed, config.speed_delta, self.speed * config.speed_delta)
+		
+		self.mask = pygame.mask.from_surface(self.image)
+		
+		if not enemies and config.speed_up:
+			if config.dir_l: self.x -= self.speed * config.speed_delta * 2
+			if config.dir_r: self.x += self.speed * config.speed_delta * 2
+			if config.dir_u: self.y -= self.speed * config.speed_delta * 2
+			if config.dir_d: self.y += self.speed * config.speed_delta * 2
+		else:
+			if config.dir_l: self.x -= self.speed * config.speed_delta
+			if config.dir_r: self.x += self.speed * config.speed_delta
+			if config.dir_u: self.y -= self.speed * config.speed_delta
+			if config.dir_d: self.y += self.speed * config.speed_delta
+		
+		for w in objs:
+			
+			if type(w).__name__ == 'Enemy' and w.chp == 0: continue
+			if type(w).__name__ == 'Box'   and w.hp == 0:  continue
+			
+			m = pygame.mask.from_surface(w.image)
+			offset = (int(self.x) - w.x, int(self.y) - w.y)
+			result = m.overlap(self.mask, offset)
+			
+			if result:
+				
+				angle = math.degrees(math.atan2(offset[0], offset[1]))+90
+				
+				if not enemies and config.speed_up:
+					if   135 < angle <= 225: self.x += self.speed*2 * config.speed_delta * 2
+					if    45 < angle <= 135: self.y += self.speed*2 * config.speed_delta * 2
+					if   -45 < angle <=  45: self.x -= self.speed*2 * config.speed_delta * 2
+					if  angle <= -45 or angle > 225: self.y -= self.speed*2 * config.speed_delta * 2
+				else:
+					if   135 < angle <= 225: self.x += self.speed*2 * config.speed_delta
+					if    45 < angle <= 135: self.y += self.speed*2 * config.speed_delta
+					if   -45 < angle <=  45: self.x -= self.speed*2 * config.speed_delta
+					if  angle <= -45 or angle > 225: self.y -= self.speed*2 * config.speed_delta
+	
 	def update(self, screen, config, col_objs, enemies):
 		self.rotate(config.mouse_pos)
-		self.move(config, col_objs)
+		self.move(config, col_objs, enemies)
 		self.resize()
 		self.select_weapon(config)
 		self.rect = self.image.get_rect(center=(self.x, self.y))
@@ -192,42 +281,6 @@ class Player(pygame.sprite.Sprite):
 		self.ty = int(self.tyo * self.scale)
 		self.image = pygame.transform.scale(self.image, (self.tx, self.ty))
 	
-	def move(self, config, objs):
-		
-		self.mask = pygame.mask.from_surface(self.image)
-		
-		if config.dir_l: self.x -= self.speed
-		if config.dir_r: self.x += self.speed
-		if config.dir_u: self.y -= self.speed
-		if config.dir_d: self.y += self.speed
-		
-		for w in objs:
-			
-			if type(w).__name__ == 'Enemy' and w.chp == 0: continue
-			if type(w).__name__ == 'Box'   and w.hp == 0:  continue
-			
-			m = pygame.mask.from_surface(w.image)
-			offset = (int(self.x) - w.x, int(self.y) - w.y)
-			result = m.overlap(self.mask, offset)
-			
-			if result:
-				
-				angle = math.degrees(math.atan2(offset[0], offset[1]))+90
-				
-				if   135 < angle <= 225: self.x += self.speed*2
-				if    45 < angle <= 135: self.y += self.speed*2
-				if   -45 < angle <=  45: self.x -= self.speed*2
-				if  angle <= -45 or angle > 225: self.y -= self.speed*2
-	
-	def rotate(self, mouse_pos):
-		run, rise = (mouse_pos[0]-self.x, mouse_pos[1]-self.y)
-		self.angle = math.degrees(math.atan2(rise, run))
-		self.image = pygame.transform.rotate(self.image_orig, -self.angle)
-		self.tx = self.image.get_width()
-		self.ty = self.image.get_height()
-		self.txo = self.tx
-		self.tyo = self.ty
-	
 	def select_weapon(self, config): self.actual_weapon = config.weapons[config.selected_weapon]
 	
 	def update_weapons(self, weapons): self.weapons.update(weapons)
@@ -235,8 +288,9 @@ class Player(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
 	
 	def __init__(self, posx, posy, path, name, hp, sp, room_level, weapon, weapons):
+		
 		super().__init__()
-		# ~ pygame.sprite.Sprite.__init__(self)
+		
 		self.path = path
 		self.image_orig = load_image(enemy_paths[self.path])
 		self.image = self.image_orig
@@ -428,7 +482,9 @@ class Weapon:
 class Bullet(pygame.sprite.Sprite):
 	
 	def __init__(self, screen, name, x, y, angle, gun, scale):
+		
 		super().__init__()
+		
 		self.screen = screen
 		self.name = name
 		self.width = 16
@@ -451,14 +507,14 @@ class Bullet(pygame.sprite.Sprite):
 		self.gun = gun
 		self.time_init = time.perf_counter()
 	
-	def update(self):
+	def update(self, config):
 		self.image = load_image(bullet_paths[self.name])
 		self.resize()
 		self.image = pygame.transform.rotate(self.image, -self.angle+90)
 		self.rect = self.image.get_rect()
 		rads = math.radians(self.angle)
-		self.x += self.gun.speed * math.sin(rads)
-		self.y -= self.gun.speed * math.cos(rads)
+		self.x += self.gun.speed * config.speed_delta * math.sin(rads)
+		self.y -= self.gun.speed * config.speed_delta * math.cos(rads)
 		self.screen.blit(self.image, (self.x, self.y))
 	
 	def resize(self):
@@ -475,7 +531,9 @@ class Bullet(pygame.sprite.Sprite):
 class Box(pygame.sprite.Sprite):
 	
 	def __init__(self, name, dims, room_level, weapons):
+		
 		super().__init__()
+		
 		self.name = name
 		self.image_orig = load_image(box_paths[self.name])
 		self.image = self.image_orig
@@ -561,7 +619,9 @@ class Box(pygame.sprite.Sprite):
 class Texture(pygame.sprite.Sprite):
 	
 	def __init__(self, screen, name):
+		
 		super().__init__()
+		
 		self.screen = screen
 		self.name = name
 		self.image = load_image(wall_paths[self.name])
@@ -598,7 +658,9 @@ class Texture(pygame.sprite.Sprite):
 class IconWeapon(pygame.sprite.Sprite):
 	
 	def __init__(self, screen, name):
+		
 		super().__init__()
+		
 		self.screen = screen
 		self.name = name
 		self.image = load_image(weapon_icon_paths[self.name])
@@ -621,10 +683,6 @@ class IconWeapon(pygame.sprite.Sprite):
 		center = ( pos_x + int(tam_x/2), pos_y + int(tam_y/2))
 		self.rect = self.image.get_rect(center=center)
 		self.screen.blit(self.image, self.rect)
-		
-		# ~ self.rect = self.image.get_rect(center=(self.x, self.y))
-		# ~ self.screen.blit(self.image, self.rect)
-		''
 
 
 
@@ -635,17 +693,17 @@ class Data:
 		self.gun_init_stats = {
 			'name':  'Gun',
 			'lvl':   0,
-			'str_':  1000,			#10
+			'str_':  10,			#10
 			'ammo':  1000,
 			'cpw':   0,
 			'cpl':   100,
 			'cpa':   10,
 			'istr':  10,
 			'icost': 100,
-			'tps':   .5,
-			'dofs':  2,
-			'speed': 10,			#5
-			'acc':   0,				#5
+			'tps':   .5,			# .5
+			'dofs':  2,				#  2
+			'speed': 5,				#  5
+			'acc':   5,				#  5
 			'ps':    10
 		}
 		
@@ -696,7 +754,7 @@ class Data:
 			'cpl_sp':  100,
 			'icpl_hp': 100,
 			'icpl_sp': 100,
-			'speed':   5,		#2
+			'speed':   2,		#2
 			'money':   0,
 			'weapons': {}
 		}
