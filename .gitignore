@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 
 img/battlemech/original/*.*
+img/background/others/*.*
 img/weapons/original/*.*
 img/*.*
 Pixel Arts/*.*

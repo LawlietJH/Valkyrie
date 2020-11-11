@@ -6,29 +6,9 @@ class Config:
 	
 	def __init__(self):
 		
-		self.quit = False
-		self.pause = False
-		self.dir_l = False
-		self.dir_r = False
-		self.dir_u = False
-		self.dir_d = False
-		
-		self.mouse_pos = None
-		self.mouse_pos_x = None
-		self.mouse_pos_y = None
-		self.bullets = []
-		self.mbd = {				# Mouse Button Down
-			'pos':None,
-			'button':None,
-			'active':None
-		}
-		
-		self.speed_delta = 0
-		self.time_init = time.perf_counter()
-		self.max_frames = 60
-		self.frames = 0
-		self.texture_size = 64
-		self.box_size = 50
+		# Config:
+		self.scale = 1
+		self.RESOLUTION = (int(1280*self.scale),  int(768*self.scale))
 		
 		self.FONT = {
 			'Inc-R 18': pygame.font.Font("font/Inconsolata-Regular.ttf", 18),
@@ -71,6 +51,51 @@ class Config:
 			2: 'Plasma',
 			3: 'Flame'
 		}
+		
+		self.time_init = time.perf_counter()
+		self.max_frames = 60
+		self.mouse_pos = (int(self.RESOLUTION[0]/2),int(self.RESOLUTION[1]/2))
+		self.speed_delta = 0
+
+
+
+class HangarConfig(Config):
+	
+	def __init__(self):
+		
+		Config.__init__(self)
+		
+		self.exit = False
+		self.start_infinity = False
+
+
+
+class InfinityConfig(Config):
+	
+	def __init__(self):
+		
+		Config.__init__(self)
+		
+		self.quit = False
+		self.pause = False
+		self.dir_l = False
+		self.dir_r = False
+		self.dir_u = False
+		self.dir_d = False
+		
+		self.mouse_pos_x = None
+		self.mouse_pos_y = None
+		self.bullets = []
+		self.mbd = {				# Mouse Button Down
+			'pos':None,
+			'button':None,
+			'active':None
+		}
+		
+		self.frames = 0
+		self.texture_size = 64
+		self.box_size = 50
+		
 		self.unlocked_weapons = [ 'Gun', None, None ]
 		self.selected_weapon = 1
 		self.speed_up = True
@@ -126,5 +151,7 @@ class Info:
 		return qty_max
 
 
+
 info = Info()
+
 

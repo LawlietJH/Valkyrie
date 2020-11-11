@@ -55,3 +55,38 @@ class EventHandler():
 			
 			# ~ elif event.type == pygame.VIDEORESIZE:
 				# ~ config.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+	
+	def hangar_event_handler(self, hangar_config):
+		
+		for event in pygame.event.get():
+		
+			if event.type == pygame.QUIT: hangar_config.exit = True
+			
+			elif event.type == pygame.KEYDOWN:
+				
+				if event.key == pygame.K_ESCAPE: hangar_config.exit = True
+				
+				if   event.key == pygame.K_a: hangar_config.dir_l = True
+				elif event.key == pygame.K_d: hangar_config.dir_r = True
+				elif event.key == pygame.K_w: hangar_config.dir_u = True
+				elif event.key == pygame.K_s: hangar_config.dir_d = True
+			
+			elif event.type == pygame.KEYUP:
+				
+				if   event.key == pygame.K_a: hangar_config.dir_l = False
+				elif event.key == pygame.K_d: hangar_config.dir_r = False
+				elif event.key == pygame.K_w: hangar_config.dir_u = False
+				elif event.key == pygame.K_s: hangar_config.dir_d = False
+			
+			elif event.type == pygame.MOUSEBUTTONDOWN:
+				
+				pass
+			
+			elif event.type == pygame.MOUSEBUTTONUP:
+				
+				pass
+			
+			elif event.type == pygame.MOUSEMOTION:
+				
+				hangar_config.mouse_pos = pygame.mouse.get_pos()
+		
