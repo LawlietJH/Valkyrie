@@ -69,7 +69,8 @@ class Room:
 			'dofs':   2 + self.level/100,
 			'speed':  4,
 			'acc':    6 - int(self.level/15) if int(self.level/15) <= 6 else 6,
-			'ps':     10
+			'ps':     10,
+			'hp_abs': None
 		}
 		
 		plasma_init_stats = {
@@ -88,7 +89,8 @@ class Room:
 			'dofs':   2 + self.level/100,
 			'speed':  2,
 			'acc':    10 - int(self.level/10) if int(self.level/10) <= 10 else 10,
-			'ps':     20
+			'ps':     20,
+			'hp_abs': None
 		}
 		
 		flame_init_stats = {
@@ -107,7 +109,8 @@ class Room:
 			'dofs':   1 + self.level/60,
 			'speed':  5,
 			'acc':    3 - int(self.level/30) if int(self.level/30) <= 3 else 3,
-			'ps':     30
+			'ps':     30,
+			'hp_abs': None
 		}
 		
 		self.enemy_01_init_stats = {
@@ -210,6 +213,9 @@ class Game:
 		
 		# Booleans:
 		self.extra_room_open = False
+		
+		# Lists:
+		self.player_absorptions = []
 		self.drop_on_boxes = []
 		self.damage_on_enemies = []
 		self.damage_on_boxes = []
@@ -395,43 +401,50 @@ class Game:
 	
 	def add_drops(self, obj):
 		for k, v in obj.drop.items():
-			if k == 'money':  self.data.player.money += v
-			elif k == 'ammo': self.data.player.weapons[obj.actual_weapon].ammo += v
-			elif k == 'dmg res':
-				if self.data.player.dmg_res < .9:
-					self.data.player.dmg_res += v
-				else:
-					self.data.player.weapons[obj.actual_weapon].speed += v*10
-			elif k == 'tps':
-				if self.data.player.weapons[obj.actual_weapon].tps > 0:
-					self.data.player.weapons[obj.actual_weapon].tps -= v
-				else:
-					self.data.player.weapons[obj.actual_weapon].speed += v*10
-			elif k == 'range': self.data.player.weapons[obj.actual_weapon].dofs += v
-			elif k == 'speed': self.data.player.weapons[obj.actual_weapon].speed += v
-			elif k == 'accuracy':
-				if self.data.player.weapons[obj.actual_weapon].accuracy > 0:
-					self.data.player.weapons[obj.actual_weapon].accuracy -= v
-				else:
-					self.data.player.weapons[obj.actual_weapon].speed += v/10
-			elif k == 'piercing': self.data.player.weapons[obj.actual_weapon].ps += v
-			elif k == 'speed mech': self.data.player.speed += v
-			elif k == 'hp recovery':
-				if self.data.player.hp_time_recovery > 0:
-					self.data.player.hp_time_recovery -= v
-				else:
-					if self.data.player.sp_time_recovery > 0:
-						self.data.player.sp_time_recovery -= (v-.005)
+			try:
+				if k == 'money':  self.data.player.money += v
+				elif k == 'ammo': self.data.player.weapons[obj.actual_weapon].ammo += v
+				elif k == 'dmg res':
+					if self.data.player.dmg_res <= .85:
+						self.data.player.dmg_res += v
 					else:
-						self.data.player.weapons[obj.actual_weapon].speed += (v*4)
-			elif k == 'sp recovery':
-				if self.data.player.sp_time_recovery > 0:
-					self.data.player.sp_time_recovery -= v
-				else:
+						self.data.player.weapons[obj.actual_weapon].speed += v*10
+				elif k == 'tps':
+					if self.data.player.weapons[obj.actual_weapon].tps > 0:
+						self.data.player.weapons[obj.actual_weapon].tps -= v
+					else:
+						self.data.player.weapons[obj.actual_weapon].speed += v*10
+				elif k == 'range': self.data.player.weapons[obj.actual_weapon].dofs += v
+				elif k == 'speed': self.data.player.weapons[obj.actual_weapon].speed += v
+				elif k == 'accuracy':
+					if self.data.player.weapons[obj.actual_weapon].accuracy > 0:
+						self.data.player.weapons[obj.actual_weapon].accuracy -= v
+					else:
+						self.data.player.weapons[obj.actual_weapon].speed += v/10
+				elif k == 'piercing': self.data.player.weapons[obj.actual_weapon].ps += v
+				elif k == 'speed mech': self.data.player.speed += v
+				elif k == 'hp abs':
+					if self.data.player.weapons[obj.actual_weapon].hp_abs < 1:
+						self.data.player.weapons[obj.actual_weapon].hp_abs += v
+					else:
+						self.data.player.speed += v*5
+				elif k == 'hp recovery':
 					if self.data.player.hp_time_recovery > 0:
-						self.data.player.hp_time_recovery -= (v+.005)
+						self.data.player.hp_time_recovery -= v
 					else:
-						self.data.player.weapons[obj.actual_weapon].speed += (v*5)
+						if self.data.player.sp_time_recovery > 0:
+							self.data.player.sp_time_recovery -= (v-.005)
+						else:
+							self.data.player.weapons[obj.actual_weapon].speed += (v*4)
+				elif k == 'sp recovery':
+					if self.data.player.sp_time_recovery > 0:
+						self.data.player.sp_time_recovery -= v
+					else:
+						if self.data.player.hp_time_recovery > 0:
+							self.data.player.hp_time_recovery -= (v+.005)
+						else:
+							self.data.player.weapons[obj.actual_weapon].speed += (v*5)
+			except KeyError: pass
 	
 	def del_bullets(self):
 		for i in range(len(self.room.bullets)):
@@ -590,7 +603,7 @@ class Game:
 		ps = self.data.player.gun.ps
 		money = self.data.player.money
 		
-		HPtxt = 'HP: '+str(chp).ljust(6)+'/'+str(hp).ljust(6)
+		HPtxt = 'HP: '+str(int(chp)).ljust(6)+'/'+str(hp).ljust(6)
 		SPtxt = 'SP: '+str(csp).ljust(6)+'/'+str(sp).ljust(6)
 		Moneytxt = '$'+str(money)
 		NLtxt = 'Next: $'+str(self.data.player.gun.cpl)
@@ -778,9 +791,9 @@ class Game:
 	
 	def draw_player(self):
 		obj = self.data.player.update(self.screen, self.config, self.room.col_objs, self.room.enemies)
-		
 		for o in obj: self.damage_on_player.append(o)
 		self.draw_damage('player')
+		self.draw_absorption('player')
 	
 	def draw_enemies(self):
 		for e in self.room.enemies:
@@ -813,31 +826,37 @@ class Game:
 		font = 'Inc-R '+str(font_size)
 		add = 0
 		for k, v in obj.drop.items():
-			
-			if k == 'money':   text = '+$' + str(v)
-			elif k == 'ammo':  text = obj.actual_weapon+' Ammo +'+str(v)
-			elif k == 'dmg res':
-				if self.data.player.dmg_res < .9:
-					text = 'Player DMG Resistance +'+str(v)
-				else:
-					text = obj.actual_weapon+' Speed +'+str(v*10)
-			elif k == 'tps':
-				if self.data.player.weapons[obj.actual_weapon].tps > 0:
-					text = obj.actual_weapon+' TPS Speed -'+str(v)
-				else:
-					text = obj.actual_weapon+' Speed +'+str(v)
-			elif k == 'range': text = obj.actual_weapon+' Range +'+str(v)
-			elif k == 'speed': text = obj.actual_weapon+' Speed +'+str(v)
-			elif k == 'accuracy':
-				if self.data.player.weapons[obj.actual_weapon].accuracy > 0:
-					text = obj.actual_weapon+' Accuracy +'+str(v)
-				else:
-					text = obj.actual_weapon+' Speed +'+str(v*10)
-			elif k == 'piercing': text = obj.actual_weapon+' Piercing +'+str(v)
-			elif k == 'speed mech': text = 'Speed Mech +'+str(v)
-			elif k == 'hp recovery': text = 'HP Recovery speed -'+str(v)
-			elif k == 'sp recovery': text = 'SP Recovery speed -'+str(v)
-			else: text = ''
+			try:
+				if k == 'money':   text = '+$' + str(v)
+				elif k == 'ammo':  text = obj.actual_weapon+' Ammo +'+str(v)
+				elif k == 'dmg res':
+					if self.data.player.dmg_res <= .85:
+						text = 'Player DMG Resistance +'+str(v)
+					else:
+						text = obj.actual_weapon+' Speed +'+str(v*10)
+				elif k == 'tps':
+					if self.data.player.weapons[obj.actual_weapon].tps > 0:
+						text = obj.actual_weapon+' TPS Speed -'+str(v)
+					else:
+						text = obj.actual_weapon+' Speed +'+str(v)
+				elif k == 'range': text = obj.actual_weapon+' Range +'+str(v)
+				elif k == 'speed': text = obj.actual_weapon+' Speed +'+str(v)
+				elif k == 'accuracy':
+					if self.data.player.weapons[obj.actual_weapon].accuracy > 0:
+						text = obj.actual_weapon+' Accuracy +'+str(v)
+					else:
+						text = obj.actual_weapon+' Speed +'+str(v*10)
+				elif k == 'piercing': text = obj.actual_weapon+' Piercing +'+str(v)
+				elif k == 'speed mech': text = 'Speed Mech +'+str(v)
+				elif k == 'hp abs':
+					if self.data.player.weapons[obj.actual_weapon].hp_abs < 1:
+						text = obj.actual_weapon+' HP Absorption +'+str(v*100)+'%'
+					else:
+						text = 'Speed Mech +'+str(v*5)
+				elif k == 'hp recovery': text = 'HP Recovery speed -'+str(v)
+				elif k == 'sp recovery': text = 'SP Recovery speed -'+str(v)
+				else: text = ''
+			except KeyError: text = ''
 			
 			x = self.get_pos_text_center(obj.x, len(text), font, font_size)
 			move = (time.perf_counter() - obj.killed_time) * 20
@@ -845,6 +864,31 @@ class Game:
 			self.draw_text(text,  pos,                 self.config.FONT[font], self.config.COLOR['Negro'])
 			self.draw_text(text, (pos[0]-1, pos[1]-1), self.config.FONT[font], self.config.COLOR['Azul Claro'])
 			add += 15
+	
+	def draw_absorption(self, type_):
+		
+		font_size = int(16*self.scale)
+		font = 'Inc-R '+str(font_size)
+		
+		if type_ == 'player': absorptions = self.data.player.hp_absorb[:]
+		
+		for i, obj in enumerate(absorptions):
+			
+			text = '+'+str(round(obj['abs'], 2))
+			
+			current_time = time.perf_counter() - obj['hit']
+			x = self.get_pos_text_center(obj['x'], len(text), font, font_size)
+			move = (current_time) * 20
+			pos = (x, int( obj['y'] + (obj['ty']/2) - move - 60))
+			
+			self.draw_text(text,  pos,                 self.config.FONT[font], self.config.COLOR['Negro'])
+			self.draw_text(text, (pos[0]-1, pos[1]-1), self.config.FONT[font], self.config.COLOR['Verde Claro'])
+			
+			if type_ == 'player' and current_time > 1 and self.data.player.hp_absorb:
+				self.data.player.hp_absorb.pop(i)
+		
+		# ~ if type_ == 'player':
+			# ~ while None in self.data.player.hp_absorb: self.data.player.hp_absorb.remove(None)
 	
 	def draw_damage(self, type_):
 		
@@ -862,7 +906,7 @@ class Game:
 			current_time = time.perf_counter() - obj['hit']
 			x = self.get_pos_text_center(obj['x'], len(text), font, font_size)
 			move = (current_time) * 20
-			pos = (x, int( obj['y'] + (obj['ty']/2) - move - 50))
+			pos = (x, int( obj['y'] + (obj['ty']/2) - move - 60))
 			
 			self.draw_text(text,  pos,                 self.config.FONT[font], self.config.COLOR['Negro'])
 			self.draw_text(text, (pos[0]-1, pos[1]-1), self.config.FONT[font], self.config.COLOR['Rojo Claro'])

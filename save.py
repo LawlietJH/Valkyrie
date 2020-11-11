@@ -8,15 +8,16 @@ def save_data(player, verb=True):
 	
 	for name, weapon in player.weapons.items():
 		data = {
-			'lvl':    weapon.lvl,			# Weapon level
-			'str_':   weapon.str,			# Weapon strenght
-			'ammo':   weapon.ammo,			# Ammunition quantity
-			'dmg_hp': weapon.dmg_hp,		
-			'tps':    round(weapon.tps,2),	# Time per shot
-			'dofs':   round(weapon.dofs,2),	# Duration of the shot = Range
+			'lvl':    weapon.lvl,				# Weapon level
+			'str_':   weapon.str,				# Weapon strenght
+			'ammo':   weapon.ammo,				# Ammunition quantity
+			'dmg_hp': weapon.dmg_hp,			# Distribution of damages
+			'tps':    round(weapon.tps,2),		# Time per shot
+			'dofs':   round(weapon.dofs,2),		# Duration of the shot = Range
 			'speed':  round(weapon.speed,2),	# Shot speed
-			'acc':    weapon.accuracy,		# Shot accuracy
-			'ps':     weapon.ps				# Piercing strike
+			'acc':    weapon.accuracy,			# Shot accuracy
+			'ps':     weapon.ps,				# Piercing strike
+			'hp_abs': round(weapon.hp_abs,2)	# Health point absorption
 		}
 		
 		data_weapons[name] = data

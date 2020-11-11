@@ -73,7 +73,7 @@ class Config:
 		}
 		self.unlocked_weapons = [ 'Gun', None, None ]
 		self.selected_weapon = 1
-		self.speed_up = False
+		self.speed_up = True
 		self.level_up = False
 		self.level_up_hp = False
 		self.level_up_sp = False
@@ -88,14 +88,15 @@ class Info:
 		
 		drops = {
 			'money':       { 'probability': 95, 'drop': {'money': money}      },
-			'ammo':        { 'probability': 20, 'drop': {'ammo': ammo}        },
-			'dmg res':     { 'probability':  100, 'drop': {'dmg res': .01}      },
+			'ammo':        { 'probability': 10, 'drop': {'ammo': ammo}        },
+			'dmg res':     { 'probability':  1, 'drop': {'dmg res': .01}      },
 			'tps':         { 'probability':  1, 'drop': {'tps': .01}          },
 			'range':       { 'probability':  1, 'drop': {'range': .01}        },
-			'speed':       { 'probability':  5, 'drop': {'speed': .1}         },
+			'speed':       { 'probability':  1, 'drop': {'speed': .1}         },
 			'accuracy':    { 'probability':  1, 'drop': {'accuracy':  1}      },
 			'piercing':    { 'probability':  1, 'drop': {'piercing':  1}      },
 			'speed mech':  { 'probability':  1, 'drop': {'speed mech': .05}   },
+			'hp abs':      { 'probability':  51, 'drop': {'hp abs': .01}       },
 			'hp recovery': { 'probability':  1, 'drop': {'hp recovery': .025} },
 			'sp recovery': { 'probability':  1, 'drop': {'sp recovery': .02}  }
 		}

@@ -84,6 +84,8 @@ class Player(pygame.sprite.Sprite):
 		self.speed = speed				# Player Speed
 		# ~ self.dmg_hp = .2				# Damage to health points
 		self.dmg_res = .5				# Resistance to damage
+		self.hp_absorb = []				# HP Absorbtion list
+		
 		self.killed_time = 0
 		self.last_hit_time = 0
 		self.hp_time_recovery = .3
@@ -112,7 +114,6 @@ class Player(pygame.sprite.Sprite):
 		
 		self.money  = data['money']
 		self.speed  = data['speed']
-		# ~ self.dmg_hp = data['dmg_hp']
 		self.dmg_res = data['dmg_res']
 		self.hp_time_recovery = data['hp_time_recovery']
 		self.sp_time_recovery = data['sp_time_recovery']
@@ -131,6 +132,7 @@ class Player(pygame.sprite.Sprite):
 			self.weapons[name].speed    = data['weapons'][name]['speed']
 			self.weapons[name].accuracy = data['weapons'][name]['acc']
 			self.weapons[name].ps       = data['weapons'][name]['ps']
+			self.weapons[name].hp_abs   = data['weapons'][name]['hp_abs']
 			
 			for lvl in range(data['weapons'][name]['lvl']): self.weapons[name].levelUp()
 	
@@ -236,7 +238,7 @@ class Player(pygame.sprite.Sprite):
 					if result:
 						str_ = o.gun.str
 						if not self.chp == 0:
-							print(self.dmg_res, round(self.dmg_res,1))
+							# ~ print(self.dmg_res, round(self.dmg_res,1))
 							tmp_dmg_hp = round(self.dmg_res,1)-enemy.gun.dmg_hp
 							self.damage_effect(str_, 1-tmp_dmg_hp)
 						o.hp -= 1000
@@ -347,7 +349,7 @@ class Enemy(pygame.sprite.Sprite):
 		money_max += 30 if self.name == 'Enemy 03' and random.random() <= .5 else 0
 		money_val = random.randint(money_min, money_max)*10
 		
-		ammo = {'Gun':100, 'Plasma':50, 'Flame':25}
+		ammo = {'Gun':50, 'Plasma':20, 'Flame':10}
 		
 		drops = config.info.drops_config(money_val, ammo[self.actual_weapon])
 		
@@ -360,6 +362,7 @@ class Enemy(pygame.sprite.Sprite):
 		if random.random() < drops['accuracy']['probability']   /100: self.drop.update(drops['accuracy']['drop'])
 		if random.random() < drops['piercing']['probability']   /100: self.drop.update(drops['piercing']['drop'])
 		if random.random() < drops['speed mech']['probability'] /100: self.drop.update(drops['speed mech']['drop'])
+		if random.random() < drops['hp abs']['probability']     /100: self.drop.update(drops['hp abs']['drop'])
 		if random.random() < drops['hp recovery']['probability']/100: self.drop.update(drops['hp recovery']['drop'])
 		if random.random() < drops['sp recovery']['probability']/100: self.drop.update(drops['sp recovery']['drop'])
 	
@@ -391,7 +394,7 @@ class Enemy(pygame.sprite.Sprite):
 				if result:
 					str_ = o.gun.str
 					if not self.chp == 0:
-						self.damage_effect(str_, player.gun.dmg_hp)
+						self.damage_effect(str_, player)
 					o.hp -= self.rp
 					return {
 						'dmg': str_,
@@ -401,8 +404,19 @@ class Enemy(pygame.sprite.Sprite):
 						'hit': time.perf_counter()
 					}
 	
-	def damage_effect(self, str_, dmg_hp):
+	def damage_effect(self, str_, player):
+		
+		absorb = {
+			'abs': 0,
+			'x':   int(player.x),
+			'y':   int(player.y),
+			'ty':  int(player.ty),
+			'hit': time.perf_counter()
+		}
+		
+		dmg_hp = player.gun.dmg_hp
 		dmg_sp = 1-dmg_hp
+		
 		if self.csp > 0:
 			if self.csp - str_*dmg_sp >= 0:
 				self.csp -= str_*dmg_sp
@@ -410,18 +424,33 @@ class Enemy(pygame.sprite.Sprite):
 				temp = ((str_*dmg_sp)-self.csp)
 				self.chp -= temp
 				self.csp = 0
+				absorb['abs'] += temp
 			if self.chp - str_*dmg_hp >= 0:
 				self.chp -= str_*dmg_hp
+				absorb['abs'] += str_*dmg_hp
 			else:
+				absorb['abs'] += self.chp
 				self.chp = 0
 				self.killed_time = time.perf_counter()
 		else:
 			if self.chp - str_ >= 0:
 				self.chp -= str_
+				absorb['abs'] += str_
 			else:
+				absorb['abs'] += self.chp
 				self.chp = 0
+		
+		if player.gun.hp_abs > 0 and not player.chp >= player.hp:
+			absorb['abs'] *= player.gun.hp_abs
+			# ~ print(player.chp, absorb['abs'], player.hp, player.chp < player.hp)
+			player.chp += absorb['abs'] if player.chp < player.hp else 0
+			player.hp_absorb.append(absorb)
+			if player.chp > player.hp: player.chp = player.hp
+			player.chp = round(player.chp, 2)
+		
 		self.chp = int(self.chp)
 		self.csp = int(self.csp)
+		
 		if self.chp == 0:
 			self.killed_time = time.perf_counter()
 	
@@ -447,7 +476,7 @@ class Enemy(pygame.sprite.Sprite):
 
 class Weapon:
 	
-	def __init__(self, bullet, name, lvl, str_, ammo, cpw, cpl, cpa, istr, icost, dmg_hp, tps, dofs, speed, acc, ps):
+	def __init__(self, bullet, name, lvl, str_, ammo, cpw, cpl, cpa, istr, icost, dmg_hp, tps, dofs, speed, acc, ps, hp_abs):
 		self.bullet = bullet	# Bullet Class
 		self.name = name		# Weapon name
 		self.lvl = lvl			# Weapon level
@@ -462,8 +491,9 @@ class Weapon:
 		self.tps = tps			# Time per shot
 		self.dofs = dofs		# Duration of the shot
 		self.speed = speed		# Shot speed
-		self.accuracy = acc		# Shot Accuracy
-		self.ps = ps			# Piercing Strike
+		self.accuracy = acc		# Shot accuracy
+		self.ps = ps			# Piercing strike
+		self.hp_abs = hp_abs	# Health point absorption
 	
 	def update_speed(self, scale):
 		self.speed = self.speed*scale
@@ -599,6 +629,7 @@ class Box(pygame.sprite.Sprite):
 		if random.random() < drops['accuracy']['probability']   /100: self.drop.update(drops['accuracy']['drop'])
 		if random.random() < drops['piercing']['probability']   /100: self.drop.update(drops['piercing']['drop'])
 		if random.random() < drops['speed mech']['probability'] /100: self.drop.update(drops['speed mech']['drop'])
+		if random.random() < drops['hp abs']['probability']     /100: self.drop.update(drops['hp abs']['drop'])
 		if random.random() < drops['hp recovery']['probability']/100: self.drop.update(drops['hp recovery']['drop'])
 		if random.random() < drops['sp recovery']['probability']/100: self.drop.update(drops['sp recovery']['drop'])
 	
@@ -733,7 +764,8 @@ class Data:
 			'dofs':   2,			#  2
 			'speed':  5,			#  5
 			'acc':    5,			#  5
-			'ps':     10
+			'ps':     10,
+			'hp_abs': 0
 		}
 		
 		self.plasma_init_stats = {
@@ -751,7 +783,8 @@ class Data:
 			'dofs':   1,
 			'speed':  3,
 			'acc':    1,
-			'ps':     20
+			'ps':     20,
+			'hp_abs': .1
 		}
 		
 		self.flame_init_stats = {
@@ -769,7 +802,8 @@ class Data:
 			'dofs':   1,
 			'speed':  5,
 			'acc':    0,
-			'ps':     30
+			'ps':     30,
+			'hp_abs': .2
 		}
 		
 		self.gun    = Weapon(Bullet, **self.gun_init_stats)
