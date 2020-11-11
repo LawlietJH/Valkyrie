@@ -377,9 +377,6 @@ class Game:
 		
 		for i in range(len(self.room.boxes)):
 			if self.room.boxes[i].kill:
-				if not self.room.boxes[i].loot_obtained:
-					self.add_drops(self.room.boxes[i])
-					self.room.boxes[i].loot_obtained = True
 				if time.perf_counter() - self.room.boxes[i].killed_time > 2:
 					b = self.room.boxes.pop(i)
 					del b
@@ -388,9 +385,6 @@ class Game:
 		
 		for i in range(len(self.room.enemies)):
 			if self.room.enemies[i].kill:
-				if not self.room.enemies[i].loot_obtained:
-					self.add_drops(self.room.enemies[i])
-					self.room.enemies[i].loot_obtained = True
 				if time.perf_counter() - self.room.enemies[i].killed_time > 2:
 					b = self.room.enemies.pop(i)
 					del b
@@ -408,32 +402,56 @@ class Game:
 					if self.data.player.dmg_res <= .85:
 						self.data.player.dmg_res += v
 					else:
-						self.data.player.weapons[obj.actual_weapon].speed += v*10
+						self.data.player.weapons[obj.actual_weapon].speed += v*5
 				elif k == 'tps':
 					if self.data.player.weapons[obj.actual_weapon].tps > 0:
 						self.data.player.weapons[obj.actual_weapon].tps -= v
 					else:
-						self.data.player.weapons[obj.actual_weapon].speed += v*10
+						self.data.player.weapons[obj.actual_weapon].speed += v*5
 				elif k == 'range': self.data.player.weapons[obj.actual_weapon].dofs += v
 				elif k == 'speed': self.data.player.weapons[obj.actual_weapon].speed += v
 				elif k == 'accuracy':
-					if self.data.player.weapons[obj.actual_weapon].accuracy > 0:
+					if obj.actual_weapon == self.config.weapons[1] \
+					and self.data.player.weapons[obj.actual_weapon].accuracy == 0:
+						config.info.max_acc_1 = True
+					elif obj.actual_weapon == self.config.weapons[2] \
+					and self.data.player.weapons[obj.actual_weapon].accuracy == 0:
+						config.info.max_acc_2 = True
+					elif obj.actual_weapon == self.config.weapons[3] \
+					and self.data.player.weapons[obj.actual_weapon].accuracy == 0:
+						config.info.max_acc_3 = True
+					
+					if obj.actual_weapon == self.config.weapons[1] \
+					and not config.info.max_acc_1:
+						self.data.player.weapons[obj.actual_weapon].accuracy -= v
+					elif obj.actual_weapon == self.config.weapons[2] \
+					and not config.info.max_acc_2:
+						self.data.player.weapons[obj.actual_weapon].accuracy -= v
+					elif obj.actual_weapon == self.config.weapons[3] \
+					and not config.info.max_acc_3:
 						self.data.player.weapons[obj.actual_weapon].accuracy -= v
 					else:
-						self.data.player.weapons[obj.actual_weapon].speed += v/10
+						self.data.player.weapons[obj.actual_weapon].speed += v/5
 				elif k == 'piercing': self.data.player.weapons[obj.actual_weapon].ps += v
 				elif k == 'speed mech':
 					if self.data.player.speed < 4: self.data.player.speed += v
 				elif k == 'hp abs':
 					if obj.actual_weapon == self.config.weapons[1] \
-					and self.data.player.weapons[obj.actual_weapon].hp_abs < .01:
-						self.data.player.weapons[obj.actual_weapon].hp_abs += v
+					and self.data.player.weapons[obj.actual_weapon].hp_abs >= .01:
+						config.info.max_hp_abs_1 = True
 					elif obj.actual_weapon == self.config.weapons[2] \
-					and self.data.player.weapons[obj.actual_weapon].hp_abs < .03:
-						self.data.player.weapons[obj.actual_weapon].hp_abs += v
+					and self.data.player.weapons[obj.actual_weapon].hp_abs >= .03:
+						config.info.max_hp_abs_2 = True
 					elif obj.actual_weapon == self.config.weapons[3] \
-					and self.data.player.weapons[obj.actual_weapon].hp_abs < .05:
-						self.data.player.weapons[obj.actual_weapon].hp_abs += v
+					and self.data.player.weapons[obj.actual_weapon].hp_abs >= .05:
+						config.info.max_hp_abs_3 = True
+					
+					if   obj.actual_weapon == self.config.weapons[1] \
+					and not config.info.max_hp_abs_1: self.data.player.weapons[obj.actual_weapon].hp_abs += v
+					elif obj.actual_weapon == self.config.weapons[2] \
+					and not config.info.max_hp_abs_2: self.data.player.weapons[obj.actual_weapon].hp_abs += v
+					elif obj.actual_weapon == self.config.weapons[3] \
+					and not config.info.max_hp_abs_3: self.data.player.weapons[obj.actual_weapon].hp_abs += v
 					else:
 						if self.data.player.speed < 4: self.data.player.speed += v
 				elif k == 'hp recovery':
@@ -443,7 +461,7 @@ class Game:
 						if self.data.player.sp_time_recovery > 0:
 							self.data.player.sp_time_recovery -= (v-.005)
 						else:
-							self.data.player.weapons[obj.actual_weapon].speed += (v*4)
+							self.data.player.weapons[obj.actual_weapon].speed += (v*2)
 				elif k == 'sp recovery':
 					if self.data.player.sp_time_recovery > 0:
 						self.data.player.sp_time_recovery -= v
@@ -451,7 +469,7 @@ class Game:
 						if self.data.player.hp_time_recovery > 0:
 							self.data.player.hp_time_recovery -= (v+.005)
 						else:
-							self.data.player.weapons[obj.actual_weapon].speed += (v*5)
+							self.data.player.weapons[obj.actual_weapon].speed += (v*2.5)
 			except KeyError: pass
 	
 	def del_bullets(self):
@@ -480,7 +498,7 @@ class Game:
 		if self.config.mbd['active'] and self.config.mbd['button'] == 1 and self.data.player.gun.ammo > 0:
 			if time.perf_counter() - self.actual_time > self.data.player.gun.tps:
 				accuracy  = self.data.player.angle+90
-				accuracy += random.randint(-self.data.player.gun.accuracy, self.data.player.gun.accuracy)
+				accuracy += random.randint(int(-(self.data.player.gun.accuracy+.99)), int(self.data.player.gun.accuracy+.99))
 				bullet = self.data.player.gun.bullet(self.screen, self.data.player.actual_weapon, self.data.player.x, self.data.player.y, accuracy, self.data.player.gun, self.scale)
 				self.room.bullets.append(bullet)
 				self.data.player.gun.ammo -= 1
@@ -698,7 +716,10 @@ class Game:
 			self.draw_damage('boxes')
 			
 			if b.kill:
-				self.draw_drops(b)
+				if not b.loot_obtained:
+					self.add_drops(b)		# Add Loot
+					b.loot_obtained = True
+				self.draw_drops(b)			# Draw Loot
 			else:
 				text = str(b.hp)
 				font_size = int(14*self.scale)
@@ -812,7 +833,10 @@ class Game:
 			self.draw_damage('enemies')
 			
 			if e.kill:
-				self.draw_drops(e)
+				if not e.loot_obtained:
+					self.add_drops(e)		# Add Loot
+					e.loot_obtained = True
+				self.draw_drops(e)			# Draw Loot
 			else:
 				font_size = int(14*self.scale)
 				font = 'Inc-R '+str(font_size)
@@ -829,6 +853,11 @@ class Game:
 				self.draw_text(text,  pos,                 self.config.FONT[font], self.config.COLOR['Negro'])
 				self.draw_text(text, (pos[0]-1, pos[1]-1), self.config.FONT[font], self.config.COLOR['Azul Claro'])
 	
+	def get_speed_percent(self, weapon, value):
+		if   weapon == self.config.weapons[1]: return 100 / self.data.gun_init_stats['speed']   *v
+		elif weapon == self.config.weapons[2]: return 100 / self.data.plasma_init_stats['speed']*v
+		elif weapon == self.config.weapons[3]: return 100 / self.data.flame_init_stats['speed'] *v
+	
 	def draw_drops(self, obj):
 		font_size = int(14*self.scale)
 		font = 'Inc-R '+str(font_size)
@@ -841,33 +870,56 @@ class Game:
 					if self.data.player.dmg_res <= .85:
 						text = 'Player DMG Resistance +'+str(v)
 					else:
-						text = obj.actual_weapon+' Speed +'+str(v*10)
+						percent = self.get_speed_percent(obj.actual_weapon, v*5)
+						text = obj.actual_weapon+' Speed +'+str(percent)+'%'
+						# ~ text = obj.actual_weapon+' Speed +'+str(v*10)
 				elif k == 'tps':
 					if self.data.player.weapons[obj.actual_weapon].tps > 0:
 						text = obj.actual_weapon+' TPS Speed -'+str(v)
 					else:
-						text = obj.actual_weapon+' Speed +'+str(v)
+						percent = self.get_speed_percent(obj.actual_weapon, v)
+						text = obj.actual_weapon+' Speed +'+str(percent)+'%'
+						# ~ text = obj.actual_weapon+' Speed +'+str(v)
 				elif k == 'range': text = obj.actual_weapon+' Range +'+str(v)
-				elif k == 'speed': text = obj.actual_weapon+' Speed +'+str(v)
+				elif k == 'speed':
+					percent = self.get_speed_percent(obj.actual_weapon, v)
+					text = obj.actual_weapon+' Speed +'+str(percent)+'%'
 				elif k == 'accuracy':
-					if self.data.player.weapons[obj.actual_weapon].accuracy > 0:
-						text = obj.actual_weapon+' Accuracy +'+str(v)
+					if obj.actual_weapon == self.config.weapons[1] \
+					and not config.info.max_acc_1:
+						percent = 100/self.data.gun_init_stats['acc']*v
+						text = obj.actual_weapon+' Accuracy +'+str(percent)+'%'
+					elif obj.actual_weapon == self.config.weapons[2] \
+					and not config.info.max_acc_2:
+						percent = 100/self.data.plasma_init_stats['acc']*v
+						text = obj.actual_weapon+' Accuracy +'+str(percent)+'%'
+					elif obj.actual_weapon == self.config.weapons[3] \
+					and not config.info.max_acc_3:
+						percent = 100/self.data.flame_init_stats['acc']*v
+						text = obj.actual_weapon+' Accuracy +'+str(percent)+'%'
 					else:
-						text = obj.actual_weapon+' Speed +'+str(v*10)
+						percent = self.get_speed_percent(obj.actual_weapon, v/5)
+						text = obj.actual_weapon+' Speed +'+str(percent)+'%'
+						# ~ percent = 100/self.data.flame_init_stats['speed']*(v/5)
+						# ~ text = obj.actual_weapon+' Speed +'+str(percent)+'%'
 				elif k == 'piercing': text = obj.actual_weapon+' Piercing +'+str(v)
-				elif k == 'speed mech': text = 'Speed Mech +1%'
+				elif k == 'speed mech':
+					percent = 100/self.data.player_init_stats['speed']*v
+					text = 'Speed Mech +'+str(percent)+'%'
 				elif k == 'hp abs':
 					if obj.actual_weapon == self.config.weapons[1] \
-					and  self.data.player.weapons[obj.actual_weapon].hp_abs < .01:
+					and not config.info.max_hp_abs_1:
 						text = obj.actual_weapon+' HP Absorption +'+str(v*100)+'%'
 					elif obj.actual_weapon == self.config.weapons[2] \
-					and  self.data.player.weapons[obj.actual_weapon].hp_abs < .03:
+					and not config.info.max_hp_abs_2:
 						text = obj.actual_weapon+' HP Absorption +'+str(v*100)+'%'
 					elif obj.actual_weapon == self.config.weapons[3] \
-					and  self.data.player.weapons[obj.actual_weapon].hp_abs < .05:
+					and not config.info.max_hp_abs_3:
 						text = obj.actual_weapon+' HP Absorption +'+str(v*100)+'%'
 					else:
-						if self.data.player.speed < 4: text = 'Speed Mech +0.5%'
+						if self.data.player.speed < 4:
+							percent = 100/self.data.player_init_stats['speed']*v
+							text = 'Speed Mech +'+str(percent)+'%'
 				elif k == 'hp recovery': text = 'HP Recovery speed -'+str(v)
 				elif k == 'sp recovery': text = 'SP Recovery speed -'+str(v)
 				else: text = ''

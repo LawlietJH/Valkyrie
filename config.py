@@ -90,6 +90,13 @@ class Info:
 		3: 'Flame'
 	}
 	
+	max_acc_1 = False
+	max_acc_2 = False
+	max_acc_3 = False
+	max_hp_abs_1 = False
+	max_hp_abs_2 = False
+	max_hp_abs_3 = False
+	
 	def drops_config(self, money, ammo):
 		
 		drops = {
@@ -98,8 +105,8 @@ class Info:
 			'dmg res':     { 'probability':  1, 'drop': {'dmg res': .01}      },
 			'tps':         { 'probability':  1, 'drop': {'tps': .01}          },
 			'range':       { 'probability':  1, 'drop': {'range': .01}        },
-			'speed':       { 'probability':  1, 'drop': {'speed': .05}         },
-			'accuracy':    { 'probability':  1, 'drop': {'accuracy':  1}      },
+			'speed':       { 'probability':  1, 'drop': {'speed': .05}        },
+			'accuracy':    { 'probability':  1, 'drop': {'accuracy': .25}     },
 			'piercing':    { 'probability':  1, 'drop': {'piercing':  1}      },
 			'speed mech':  { 'probability':  1, 'drop': {'speed mech': .02}   },
 			'hp abs':      { 'probability':  1, 'drop': {'hp abs': .01}       },

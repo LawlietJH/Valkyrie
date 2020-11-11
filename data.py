@@ -62,7 +62,7 @@ class Player(pygame.sprite.Sprite):
 		self.hp = hp					# Health points
 		self.chp = hp					# Current health points
 		self.hp_level = 0				# Health points level
-		self.hppl = 80					# Health points per level
+		self.hppl = 40					# Health points per level
 		self.cpl_hp = cpl_hp			# Cost per level HP
 		self.icpl_hp = icpl_hp			# Increase Cost per level HP
 		
@@ -70,7 +70,7 @@ class Player(pygame.sprite.Sprite):
 		self.sp = sp					# Shield points
 		self.csp = sp					# Current shield points
 		self.sp_level = 0				# Shield points level
-		self.sppl = 100					# Shield points per level
+		self.sppl = 25					# Shield points per level
 		self.cpl_sp = cpl_sp			# Cost per level SP
 		self.icpl_sp = icpl_sp			# Increase Cost per level SP
 		
@@ -358,16 +358,16 @@ class Enemy(pygame.sprite.Sprite):
 		
 		if random.random() < drops['money']['probability']      /100: self.drop.update(drops['money']['drop'])
 		if random.random() < drops['ammo']['probability']       /100: self.drop.update(drops['ammo']['drop'])
-		if random.random() < drops['dmg res']['probability']    /100: self.drop.update(drops['dmg res']['drop'])
-		if random.random() < drops['tps']['probability']        /100: self.drop.update(drops['tps']['drop'])
-		if random.random() < drops['range']['probability']      /100: self.drop.update(drops['range']['drop'])
-		if random.random() < drops['speed']['probability']      /100: self.drop.update(drops['speed']['drop'])
-		if random.random() < drops['accuracy']['probability']   /100: self.drop.update(drops['accuracy']['drop'])
-		if random.random() < drops['piercing']['probability']   /100: self.drop.update(drops['piercing']['drop'])
-		if random.random() < drops['speed mech']['probability'] /100: self.drop.update(drops['speed mech']['drop'])
-		if random.random() < drops['hp abs']['probability']     /100: self.drop.update(drops['hp abs']['drop'])
-		if random.random() < drops['hp recovery']['probability']/100: self.drop.update(drops['hp recovery']['drop'])
-		if random.random() < drops['sp recovery']['probability']/100: self.drop.update(drops['sp recovery']['drop'])
+		# ~ if random.random() < drops['dmg res']['probability']    /100: self.drop.update(drops['dmg res']['drop'])
+		# ~ if random.random() < drops['tps']['probability']        /100: self.drop.update(drops['tps']['drop'])
+		# ~ if random.random() < drops['range']['probability']      /100: self.drop.update(drops['range']['drop'])
+		# ~ if random.random() < drops['speed']['probability']      /100: self.drop.update(drops['speed']['drop'])
+		# ~ if random.random() < drops['accuracy']['probability']   /100: self.drop.update(drops['accuracy']['drop'])
+		# ~ if random.random() < drops['piercing']['probability']   /100: self.drop.update(drops['piercing']['drop'])
+		# ~ if random.random() < drops['speed mech']['probability'] /100: self.drop.update(drops['speed mech']['drop'])
+		# ~ if random.random() < drops['hp abs']['probability']     /100: self.drop.update(drops['hp abs']['drop'])
+		# ~ if random.random() < drops['hp recovery']['probability']/100: self.drop.update(drops['hp recovery']['drop'])
+		# ~ if random.random() < drops['sp recovery']['probability']/100: self.drop.update(drops['sp recovery']['drop'])
 	
 	@property
 	def gun(self): return self.weapons[self.actual_weapon]
@@ -605,9 +605,9 @@ class Box(pygame.sprite.Sprite):
 		
 		self.drop = {}
 		self.actual_weapon = random.choice(list(weapons))
-		self.drop_update()
+		self.set_drops()
 	
-	def drop_update(self):
+	def set_drops(self):
 		
 		if self.room_level > 20:
 			money_min = self.room_level - 20
@@ -636,8 +636,8 @@ class Box(pygame.sprite.Sprite):
 		if random.random() < drops['piercing']['probability']   /100: self.drop.update(drops['piercing']['drop'])
 		if random.random() < drops['speed mech']['probability'] /100: self.drop.update(drops['speed mech']['drop'])
 		if random.random() < drops['hp abs']['probability']     /100: self.drop.update(drops['hp abs']['drop'])
-		if random.random() < drops['hp recovery']['probability']/100: self.drop.update(drops['hp recovery']['drop'])
-		if random.random() < drops['sp recovery']['probability']/100: self.drop.update(drops['sp recovery']['drop'])
+		# ~ if random.random() < drops['hp recovery']['probability']/100: self.drop.update(drops['hp recovery']['drop'])
+		# ~ if random.random() < drops['sp recovery']['probability']/100: self.drop.update(drops['sp recovery']['drop'])
 	
 	def update_hp(self, hp): self.hp = hp
 	
@@ -759,7 +759,7 @@ class Data:
 			'name':  config.info.weapons[1],
 			'lvl':    0,
 			'str_':   10,			# 10
-			'ammo':   1000,
+			'ammo':   5000,
 			'cpw':    0,
 			'cpl':    100,
 			'cpa':    10,
@@ -825,8 +825,8 @@ class Data:
 			'cpl_sp':  100,
 			'icpl_hp': 100,
 			'icpl_sp': 100,
-			'speed':   2,		#2
-			'money':   0,
+			'speed':   2,
+			'money':   1000000,
 			'weapons': {}
 		}
 		
