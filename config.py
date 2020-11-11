@@ -84,6 +84,12 @@ class Config:
 
 class Info:
 	
+	weapons = {
+		1: 'Gun',
+		2: 'Plasma',
+		3: 'Flame'
+	}
+	
 	def drops_config(self, money, ammo):
 		
 		drops = {
@@ -92,11 +98,11 @@ class Info:
 			'dmg res':     { 'probability':  1, 'drop': {'dmg res': .01}      },
 			'tps':         { 'probability':  1, 'drop': {'tps': .01}          },
 			'range':       { 'probability':  1, 'drop': {'range': .01}        },
-			'speed':       { 'probability':  1, 'drop': {'speed': .1}         },
+			'speed':       { 'probability':  1, 'drop': {'speed': .05}         },
 			'accuracy':    { 'probability':  1, 'drop': {'accuracy':  1}      },
 			'piercing':    { 'probability':  1, 'drop': {'piercing':  1}      },
-			'speed mech':  { 'probability':  1, 'drop': {'speed mech': .05}   },
-			'hp abs':      { 'probability':  51, 'drop': {'hp abs': .01}       },
+			'speed mech':  { 'probability':  1, 'drop': {'speed mech': .02}   },
+			'hp abs':      { 'probability':  1, 'drop': {'hp abs': .01}       },
 			'hp recovery': { 'probability':  1, 'drop': {'hp recovery': .025} },
 			'sp recovery': { 'probability':  1, 'drop': {'sp recovery': .02}  }
 		}

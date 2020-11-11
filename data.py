@@ -21,15 +21,15 @@ enemy_paths = {
 }
 
 bullet_paths = {
-	'Gun':    'img/weapons/Laser Red Gun.png',
-	'Plasma': 'img/weapons/Laser Green Plasma.png',
-	'Flame':  'img/weapons/Laser Purple Flame.png'
+	config.info.weapons[1]: 'img/weapons/Laser Red Gun.png',
+	config.info.weapons[2]: 'img/weapons/Laser Green Plasma.png',
+	config.info.weapons[3]: 'img/weapons/Laser Purple Flame.png'
 }
 
 weapon_icon_paths = {
-	'Gun':    'img/weapons/Laser Red Gun - Icon.png',
-	'Plasma': 'img/weapons/Laser Green Plasma - Icon.png',
-	'Flame':  'img/weapons/Laser Purple Flame - Icon.png'
+	config.info.weapons[1]: 'img/weapons/Laser Red Gun - Icon.png',
+	config.info.weapons[2]: 'img/weapons/Laser Green Plasma - Icon.png',
+	config.info.weapons[3]: 'img/weapons/Laser Purple Flame - Icon.png'
 }
 
 wall_paths = {
@@ -76,7 +76,7 @@ class Player(pygame.sprite.Sprite):
 		
 		self.money = money				# Player money
 		self.weapons = weapons			# Player weapons
-		self.actual_weapon = 'Gun'		# Actual weapon
+		self.actual_weapon = config.info.weapons[1]		# Actual weapon
 		self.rect = self.image.get_rect(center=(150, 150))
 		self.x = self.rect[0]			# Position X
 		self.y = self.rect[1]			# Position Y
@@ -121,9 +121,9 @@ class Player(pygame.sprite.Sprite):
 		for name, weapon in data['weapons'].items():
 			
 			if not name in self.weapons:
-				if   name == 'Gun':    self.update_weapons(all_weapons[1])
-				elif name == 'Plasma': self.update_weapons(all_weapons[2])
-				elif name == 'Flame':  self.update_weapons(all_weapons[3])
+				if   name == config.info.weapons[1]: self.update_weapons(all_weapons[1])
+				elif name == config.info.weapons[2]: self.update_weapons(all_weapons[2])
+				elif name == config.info.weapons[3]: self.update_weapons(all_weapons[3])
 			
 			self.weapons[name].ammo     = data['weapons'][name]['ammo']
 			self.weapons[name].dmg_hp   = data['weapons'][name]['dmg_hp']
@@ -238,7 +238,6 @@ class Player(pygame.sprite.Sprite):
 					if result:
 						str_ = o.gun.str
 						if not self.chp == 0:
-							# ~ print(self.dmg_res, round(self.dmg_res,1))
 							tmp_dmg_hp = round(self.dmg_res,1)-enemy.gun.dmg_hp
 							self.damage_effect(str_, 1-tmp_dmg_hp)
 						o.hp -= 1000
@@ -349,7 +348,11 @@ class Enemy(pygame.sprite.Sprite):
 		money_max += 30 if self.name == 'Enemy 03' and random.random() <= .5 else 0
 		money_val = random.randint(money_min, money_max)*10
 		
-		ammo = {'Gun':50, 'Plasma':20, 'Flame':10}
+		ammo = {
+			config.info.weapons[1]:50,
+			config.info.weapons[2]:20,
+			config.info.weapons[3]:10
+		}
 		
 		drops = config.info.drops_config(money_val, ammo[self.actual_weapon])
 		
@@ -601,7 +604,6 @@ class Box(pygame.sprite.Sprite):
 		self.loot_obtained = False
 		
 		self.drop = {}
-		# ~ self.actual_weapon = random.choice(['Gun', 'Plasma', 'Flame'])
 		self.actual_weapon = random.choice(list(weapons))
 		self.drop_update()
 	
@@ -616,7 +618,11 @@ class Box(pygame.sprite.Sprite):
 		
 		money_val = random.randint(money_min, money_max)*10
 		
-		ammo = {'Gun':50, 'Plasma':10, 'Flame':5}
+		ammo = {
+			config.info.weapons[1]:50,
+			config.info.weapons[2]:10,
+			config.info.weapons[3]:5
+		}
 		
 		drops = config.info.drops_config(money_val, ammo[self.actual_weapon])
 		
@@ -750,7 +756,7 @@ class Data:
 	def __init__(self):
 		
 		self.gun_init_stats = {
-			'name':  'Gun',
+			'name':  config.info.weapons[1],
 			'lvl':    0,
 			'str_':   10,			# 10
 			'ammo':   1000,
@@ -769,7 +775,7 @@ class Data:
 		}
 		
 		self.plasma_init_stats = {
-			'name':  'Plasma',
+			'name':  config.info.weapons[2],
 			'lvl':    0,
 			'str_':   100,
 			'ammo':   10,
@@ -788,7 +794,7 @@ class Data:
 		}
 		
 		self.flame_init_stats = {
-			'name':  'Flame',
+			'name':  config.info.weapons[3],
 			'lvl':    0,
 			'str_':   200,
 			'ammo':   5,

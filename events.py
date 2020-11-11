@@ -18,9 +18,9 @@ class EventHandler():
 				elif event.key == pygame.K_w: config.dir_u = True
 				elif event.key == pygame.K_s: config.dir_d = True
 				
-				if   event.key == pygame.K_1: config.selected_weapon = 1 if 'Gun'    in config.unlocked_weapons else config.selected_weapon
-				elif event.key == pygame.K_2: config.selected_weapon = 2 if 'Plasma' in config.unlocked_weapons else config.selected_weapon
-				elif event.key == pygame.K_3: config.selected_weapon = 3 if 'Flame'  in config.unlocked_weapons else config.selected_weapon
+				if   event.key == pygame.K_1: config.selected_weapon = 1 if config.weapons[1] in config.unlocked_weapons else config.selected_weapon
+				elif event.key == pygame.K_2: config.selected_weapon = 2 if config.weapons[2] in config.unlocked_weapons else config.selected_weapon
+				elif event.key == pygame.K_3: config.selected_weapon = 3 if config.weapons[3] in config.unlocked_weapons else config.selected_weapon
 				
 				elif event.key == pygame.K_j: config.level_up_hp = True
 				elif event.key == pygame.K_k: config.level_up_sp = True

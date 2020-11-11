@@ -54,7 +54,7 @@ class Room:
 	def set_enemies(self):
 		
 		gun_init_stats = {
-			'name':  'Gun',
+			'name':  config.info.weapons[1],
 			'lvl':    0,
 			'str_':   10 * ( 1 + int( self.level/5 ) ),					# Cambia cada 5 niveles.
 			# ~ 'str_':   2 * self.level,									# Cambia cada nivel.
@@ -74,7 +74,7 @@ class Room:
 		}
 		
 		plasma_init_stats = {
-			'name':  'Plasma',
+			'name':  config.info.weapons[2],
 			'lvl':    0,
 			'str_':   48 * ( 1 + int( self.level/6 ) ),					# Cambia cada 10 niveles.
 			# ~ 'str_':   8 * self.level,									# Cambia cada nivel.
@@ -94,7 +94,7 @@ class Room:
 		}
 		
 		flame_init_stats = {
-			'name':  'Flame',
+			'name':  config.info.weapons[3],
 			'lvl':    0,
 			'str_':   112 * ( 1 + int( self.level/7 ) ),				# Cambia cada 10 niveles.
 			# ~ 'str_':   16 * self.level,									# Cambia cada nivel.
@@ -119,8 +119,8 @@ class Room:
 			'hp':      125 * ( 1 + int( self.level/5 ) ),
 			'sp':      100 * ( 1 + int( self.level/2 ) ),
 			'room_level': self.level,
-			'weapon':  'Gun',
-			'weapons': {'Gun': data.Weapon(data.Bullet, **gun_init_stats)}
+			'weapon':  config.info.weapons[1],
+			'weapons': {config.info.weapons[1]: data.Weapon(data.Bullet, **gun_init_stats)}
 		}
 		
 		self.enemy_02_init_stats = {
@@ -129,8 +129,8 @@ class Room:
 			'hp':      250 * ( 1 + int( self.level/5 ) ),
 			'sp':      200 * ( 1 + int( self.level/2 ) ),
 			'room_level': self.level,
-			'weapon':  'Plasma',
-			'weapons': {'Plasma': data.Weapon(data.Bullet, **plasma_init_stats)}
+			'weapon':  config.info.weapons[2],
+			'weapons': {config.info.weapons[2]: data.Weapon(data.Bullet, **plasma_init_stats)}
 		}
 		
 		self.enemy_03_init_stats = {
@@ -139,8 +139,8 @@ class Room:
 			'hp':      500 * ( 1 + int( self.level/5 ) ),
 			'sp':      400 * ( 1 + int( self.level/2 ) ),
 			'room_level': self.level,
-			'weapon':  'Flame',
-			'weapons': {'Flame': data.Weapon(data.Bullet, **flame_init_stats)}
+			'weapon':  config.info.weapons[3],
+			'weapons': {config.info.weapons[3]: data.Weapon(data.Bullet, **flame_init_stats)}
 		}
 	
 	def choice(self):
@@ -206,9 +206,9 @@ class Game:
 		self.max_room = 1
 		self.icon_weapons = [None, None, None]
 		self.all_weapons = {
-			1: {'Gun':    self.data.gun},
-			2: {'Plasma': self.data.plasma},
-			3: {'Flame':  self.data.flame}
+			1: {config.info.weapons[1]: self.data.gun},
+			2: {config.info.weapons[2]: self.data.plasma},
+			3: {config.info.weapons[3]: self.data.flame}
 		}
 		
 		# Booleans:
@@ -422,12 +422,20 @@ class Game:
 					else:
 						self.data.player.weapons[obj.actual_weapon].speed += v/10
 				elif k == 'piercing': self.data.player.weapons[obj.actual_weapon].ps += v
-				elif k == 'speed mech': self.data.player.speed += v
+				elif k == 'speed mech':
+					if self.data.player.speed < 4: self.data.player.speed += v
 				elif k == 'hp abs':
-					if self.data.player.weapons[obj.actual_weapon].hp_abs < 1:
+					if obj.actual_weapon == self.config.weapons[1] \
+					and self.data.player.weapons[obj.actual_weapon].hp_abs < .01:
+						self.data.player.weapons[obj.actual_weapon].hp_abs += v
+					elif obj.actual_weapon == self.config.weapons[2] \
+					and self.data.player.weapons[obj.actual_weapon].hp_abs < .03:
+						self.data.player.weapons[obj.actual_weapon].hp_abs += v
+					elif obj.actual_weapon == self.config.weapons[3] \
+					and self.data.player.weapons[obj.actual_weapon].hp_abs < .05:
 						self.data.player.weapons[obj.actual_weapon].hp_abs += v
 					else:
-						self.data.player.speed += v*5
+						if self.data.player.speed < 4: self.data.player.speed += v
 				elif k == 'hp recovery':
 					if self.data.player.hp_time_recovery > 0:
 						self.data.player.hp_time_recovery -= v
@@ -464,9 +472,9 @@ class Game:
 	
 	def create_icons(self):
 		for name in self.data.player.weapons:
-			if   name == 'Gun':    self.icon_weapons[0] = self.data.iconWeapon(self.screen, name)
-			elif name == 'Plasma': self.icon_weapons[1] = self.data.iconWeapon(self.screen, name)
-			elif name == 'Flame':  self.icon_weapons[2] = self.data.iconWeapon(self.screen, name)
+			if   name == self.config.weapons[1]: self.icon_weapons[0] = self.data.iconWeapon(self.screen, self.config.weapons[1])
+			elif name == self.config.weapons[2]: self.icon_weapons[1] = self.data.iconWeapon(self.screen, self.config.weapons[2])
+			elif name == self.config.weapons[3]: self.icon_weapons[2] = self.data.iconWeapon(self.screen, self.config.weapons[3])
 	
 	def create_bullets(self):
 		if self.config.mbd['active'] and self.config.mbd['button'] == 1 and self.data.player.gun.ammo > 0:
@@ -847,12 +855,19 @@ class Game:
 					else:
 						text = obj.actual_weapon+' Speed +'+str(v*10)
 				elif k == 'piercing': text = obj.actual_weapon+' Piercing +'+str(v)
-				elif k == 'speed mech': text = 'Speed Mech +'+str(v)
+				elif k == 'speed mech': text = 'Speed Mech +1%'
 				elif k == 'hp abs':
-					if self.data.player.weapons[obj.actual_weapon].hp_abs < 1:
+					if obj.actual_weapon == self.config.weapons[1] \
+					and  self.data.player.weapons[obj.actual_weapon].hp_abs < .01:
+						text = obj.actual_weapon+' HP Absorption +'+str(v*100)+'%'
+					elif obj.actual_weapon == self.config.weapons[2] \
+					and  self.data.player.weapons[obj.actual_weapon].hp_abs < .03:
+						text = obj.actual_weapon+' HP Absorption +'+str(v*100)+'%'
+					elif obj.actual_weapon == self.config.weapons[3] \
+					and  self.data.player.weapons[obj.actual_weapon].hp_abs < .05:
 						text = obj.actual_weapon+' HP Absorption +'+str(v*100)+'%'
 					else:
-						text = 'Speed Mech +'+str(v*5)
+						if self.data.player.speed < 4: text = 'Speed Mech +0.5%'
 				elif k == 'hp recovery': text = 'HP Recovery speed -'+str(v)
 				elif k == 'sp recovery': text = 'SP Recovery speed -'+str(v)
 				else: text = ''
