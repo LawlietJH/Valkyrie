@@ -4,9 +4,12 @@ import init
 import room
 import save
 
+import psutil
 import pygame
 import random
 import time
+import gc		# Garbage Collector
+import os
 
 class Infinity(init.Init):
 	
@@ -63,6 +66,7 @@ class Infinity(init.Init):
 			self.reset()
 			self.mainloop()
 			self.room.complete = True
+			self.save_background_objs()
 			
 			if self.data.player.x < 0:
 				self.data.player.update_pos(self.RESOLUTION[0]-100, int(self.RESOLUTION[1]/2))
@@ -111,6 +115,8 @@ class Infinity(init.Init):
 			self.create_random_box()
 			self.create_enemies()
 			self.create_background_objs()
+		else:
+			self.re_create_background_objs()
 	
 	def mainloop(self):
 		self.config.pause = False
@@ -379,17 +385,40 @@ class Infinity(init.Init):
 						type_ = 'wall 01'
 					
 					else: type_ = 'door 01'
-					
-				obj.append(self.data.texture(self.screen, type_))
+				
+				texture = self.data.texture(self.screen, type_)
+				
+				if type_ in ['wall 01','door 01']:
+					self.room.walls.append(texture)
+				
+				obj.append(texture)
+				
 			self.room.objs.append(obj)
-		
-		for w in self.room.objs:
-			for wall in w:
-				if wall.name in ['wall 01','door 01']:
-					self.room.walls.append(wall)
 		
 		self.chk_opened_doors()
 	
+	def re_create_background_objs(self):
+		
+		for j, room_obj in enumerate(self.room.objs[:]):
+			for i, name in enumerate(room_obj):
+				
+				obj = self.data.texture(self.screen, name)
+				
+				if name in ['wall 01', 'door 01']:
+					self.room.walls.append(obj)
+				
+				self.room.objs[j][i] = obj
+		
+	def save_background_objs(self): # Garbage Collector
+		
+		self.room.col_objs = []
+		self.room.walls = []
+		
+		for j, room_obj in enumerate(self.room.objs[:]):
+			for i, obj in enumerate(room_obj):
+				self.room.objs[j][i] = obj.name
+		gc.collect()
+		
 	def chk_opened_doors(self):
 		
 		pos_x, pos_y = self.room.room
