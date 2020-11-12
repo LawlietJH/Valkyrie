@@ -10,6 +10,7 @@ def save_data(player, verb=True):
 		data = {
 			'lvl':    weapon.lvl,				# Weapon level
 			'str_':   weapon.str,				# Weapon strenght
+			# ~ 'chgr':   weapon.chgr,				# Ammunition charger
 			'ammo':   weapon.ammo,				# Ammunition quantity
 			'dmg_hp': weapon.dmg_hp,			# Distribution of damages
 			'tps':    round(weapon.tps,2),		# Time per shot

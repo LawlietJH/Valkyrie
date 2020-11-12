@@ -800,6 +800,7 @@ class Infinity(init.Init):
 		
 		# ~ if type_ == 'player':
 			# ~ while None in self.data.player.hp_absorb: self.data.player.hp_absorb.remove(None)
+		''
 	
 	def draw_damage(self, type_):
 		

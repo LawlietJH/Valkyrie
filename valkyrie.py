@@ -42,7 +42,7 @@ class Game(init.Init):
 	
 	def main(self):
 		
-		self.hangar.menu()
+		# ~ self.hangar.menu()
 		
 		# ~ if self.hangar.h_config.start_infinity: self.infinity.gamemode_infinity()
 		self.infinity.gamemode_infinity()

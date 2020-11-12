@@ -826,7 +826,7 @@ class Data:
 			'icpl_hp': 100,
 			'icpl_sp': 100,
 			'speed':   2,
-			'money':   1000000,
+			'money':   0,
 			'weapons': {}
 		}
 		
